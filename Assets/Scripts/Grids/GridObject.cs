@@ -6,7 +6,31 @@ namespace VipereSolide.Grids
     [DisallowMultipleComponent]
     public class GridObject : MonoBehaviour
     {
+        public enum ExecuteMode
+        {
+            Update,
+            LateUpdate
+        }
+
+        [SerializeField] protected ExecuteMode _executeMode = ExecuteMode.LateUpdate;
+
         private void LateUpdate()
+        {
+            if (_executeMode == ExecuteMode.LateUpdate)
+            {
+                GetGrid();
+            }
+        }
+
+        private void Update()
+        {
+            if (_executeMode == ExecuteMode.Update)
+            {
+                GetGrid();
+            }
+        }
+
+        private void GetGrid()
         {
             if (Grid.enabled == false)
             {
