@@ -444,7 +444,7 @@ namespace RuntimeGizmos
             }
 		}
 		/// <summary>
-		/// Responsible for running the transform actions (such as translating or rotating) on the selected object if needed.
+		/// Responsible for running or not the transform actions method (such as translating or rotating) on the selected object if needed.
 		/// </summary>
 		private void HandleTargetTransformActions()
         {
@@ -456,7 +456,12 @@ namespace RuntimeGizmos
                 }
             }
         }
-        private IEnumerator TransformSelected(TransformType transType)
+        /// <summary>
+        /// Responsible for executing all transform actions on the selected object.
+        /// </summary>
+        /// <param name="_transformType">The used tool for transformation</param>
+        /// <returns></returns>
+		private IEnumerator TransformSelected(TransformType _transformType)
         {
             isTransforming = true;
             totalScaleAmount = 0;
@@ -488,7 +493,7 @@ namespace RuntimeGizmos
 
                 if (previousMousePosition != Vector3.zero && mousePosition != Vector3.zero)
                 {
-                    if (transType == TransformType.Move)
+                    if (_transformType == TransformType.Move)
                     {
                         Vector3 movement = Vector3.zero;
 
@@ -552,7 +557,7 @@ namespace RuntimeGizmos
 
                         SetPivotPointOffset(movement);
                     }
-                    else if (transType == TransformType.Scale)
+                    else if (_transformType == TransformType.Scale)
                     {
                         Vector3 projected = (nearAxis == Axis.Any) ? transform.right : projectedAxis;
                         float scaleAmount = ExtVector3.MagnitudeInDirection(mousePosition - previousMousePosition, projected) * scaleSpeedMultiplier;
@@ -604,7 +609,7 @@ namespace RuntimeGizmos
 
                         totalScaleAmount += scaleAmount;
                     }
-                    else if (transType == TransformType.Rotate)
+                    else if (_transformType == TransformType.Rotate)
                     {
                         float rotateAmount = 0;
                         Vector3 rotationAxis = axis;
@@ -966,8 +971,8 @@ namespace RuntimeGizmos
                 if (nearAxis == Axis.None)
                 {
                     //Since Move and Scale share the same handle line, we give Move the priority.
-                    TransformType transType = transformType == TransformType.All ? TransformType.Move : transformType;
-                    HandleNearestLines(transType, handleLines, handleMinSelectedDistanceCheck);
+                    TransformType _transformType = transformType == TransformType.All ? TransformType.Move : transformType;
+                    HandleNearestLines(_transformType, handleLines, handleMinSelectedDistanceCheck);
                 }
             }
 
@@ -1402,8 +1407,8 @@ namespace RuntimeGizmos
         }
         public bool TranslatingTypeContains(TransformType type, bool checkIsTransforming = true)
         {
-            TransformType transType = !checkIsTransforming || isTransforming ? translatingType : transformType;
-            return TransformTypeContains(transType, type);
+            TransformType _transformType = !checkIsTransforming || isTransforming ? translatingType : transformType;
+            return TransformTypeContains(_transformType, type);
         }
         public bool TransformTypeContains(TransformType mainType, TransformType type)
         {
