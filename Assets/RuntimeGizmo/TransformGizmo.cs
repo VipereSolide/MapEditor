@@ -11,7 +11,7 @@ namespace RuntimeGizmos
 {
     //To be safe, if you are changing any transforms hierarchy, such as parenting an object to something,
     //you should call ClearTargets before doing so just to be sure nothing unexpected happens... as well as call UndoRedoManager.Clear()
-    //For example, if you select an object that has children, move the children elsewhere, deselect the original object, then try to add those old children to the selection, I think it wont work.
+    //For example, if you select an object that has _children, move the _children elsewhere, deselect the original object, then try to add those old _children to the selection, I think it wont work.
 
     [RequireComponent(typeof(Camera))]
     [DisallowMultipleComponent]
@@ -106,14 +106,14 @@ namespace RuntimeGizmos
         {
             get
             {
-                return nearAxis;
+                return _nearAxis;
             }
         }
         public Axis translatingAxisPlane
         {
             get
             {
-                return planeAxis;
+                return _planeAxis;
             }
         }
         public bool hasTranslatingAxisPlane
@@ -127,7 +127,7 @@ namespace RuntimeGizmos
         {
             get
             {
-                return translatingType;
+                return _translatingType;
             }
         }
         public Vector3 pivotPoint
@@ -151,33 +151,33 @@ namespace RuntimeGizmos
         #endregion
         #region Private
 
-        private Vector3 totalCenterPivotPoint;
-        private AxisInfo axisInfo;
-        private Axis nearAxis = Axis.None;
-        private Axis planeAxis = Axis.None;
-        private TransformType translatingType;
+        private Vector3 _totalCenterPivotPoint;
+        private AxisInfo _axisInfo;
+        private Axis _nearAxis = Axis.None;
+        private Axis _planeAxis = Axis.None;
+        private TransformType _translatingType;
 
-        private AxisVectors handleLines = new AxisVectors();
-        private AxisVectors handlePlanes = new AxisVectors();
-        private AxisVectors handleTriangles = new AxisVectors();
-        private AxisVectors handleSquares = new AxisVectors();
-        private AxisVectors circlesLines = new AxisVectors();
+        private AxisVectors _handleLines = new AxisVectors();
+        private AxisVectors _handlePlanes = new AxisVectors();
+        private AxisVectors _handleTriangles = new AxisVectors();
+        private AxisVectors _handleSquares = new AxisVectors();
+        private AxisVectors _circlesLines = new AxisVectors();
 
-        //We use a HashSet and a List for targetRoots so that we get fast lookup with the hashset while also keeping track of the order with the list.
+        //We use a HashSet and a List for _targetRoots so that we get fast lookup with the hashset while also keeping track of the order with the list.
         private List<Transform> _targetRootsOrdered = new List<Transform>();
-        private Dictionary<Transform, TargetInfo> targetRoots = new Dictionary<Transform, TargetInfo>();
-        private HashSet<Renderer> highlightedRenderers = new HashSet<Renderer>();
-        private HashSet<Transform> children = new HashSet<Transform>();
+        private Dictionary<Transform, TargetInfo> _targetRoots = new Dictionary<Transform, TargetInfo>();
+        private HashSet<Renderer> _highlightedRenderers = new HashSet<Renderer>();
+        private HashSet<Transform> _children = new HashSet<Transform>();
 
-        private List<Transform> childrenBuffer = new List<Transform>();
-        private List<Renderer> renderersBuffer = new List<Renderer>();
-        private List<Material> materialsBuffer = new List<Material>();
+        private List<Transform> _childrenBuffer = new List<Transform>();
+        private List<Renderer> _renderersBuffer = new List<Renderer>();
+        private List<Material> _materialsBuffer = new List<Material>();
 
-        private WaitForEndOfFrame waitForEndOFFrame = new WaitForEndOfFrame();
-        private Coroutine forceUpdatePivotCoroutine;
+        private WaitForEndOfFrame _waitForEndOFFrame = new WaitForEndOfFrame();
+        private Coroutine _forceUpdatePivotCoroutine;
 
-        private static Material lineMaterial;
-        private static Material outlineMaterial;
+        private static Material _lineMaterial;
+        private static Material _outlineMaterial;
 
         #endregion
 
@@ -194,13 +194,13 @@ namespace RuntimeGizmos
         }
         private void OnEnable()
         {
-            forceUpdatePivotCoroutine = StartCoroutine(ForceUpdatePivotPointAtEndOfFrame());
+            _forceUpdatePivotCoroutine = StartCoroutine(ForceUpdatePivotPointAtEndOfFrame());
         }
         private void OnDisable()
         {
             ClearTargets(); //Just so things gets cleaned up, such as removing any materials we placed on objects.
 
-            StopCoroutine(forceUpdatePivotCoroutine);
+            StopCoroutine(_forceUpdatePivotCoroutine);
         }
         private void OnDestroy()
         {
@@ -247,37 +247,37 @@ namespace RuntimeGizmos
         {
             if (mainTargetRoot == null || manuallyHandleGizmo) return;
 
-            lineMaterial.SetPass(0);
+            _lineMaterial.SetPass(0);
 
-            Color xColor = (nearAxis == Axis.X) ? (isTransforming) ? selectedColor : hoverColor : this.xColor;
-            Color yColor = (nearAxis == Axis.Y) ? (isTransforming) ? selectedColor : hoverColor : this.yColor;
-            Color zColor = (nearAxis == Axis.Z) ? (isTransforming) ? selectedColor : hoverColor : this.zColor;
-            Color allColor = (nearAxis == Axis.Any) ? (isTransforming) ? selectedColor : hoverColor : this.allColor;
+            Color xColor = (_nearAxis == Axis.X) ? (isTransforming) ? selectedColor : hoverColor : this.xColor;
+            Color yColor = (_nearAxis == Axis.Y) ? (isTransforming) ? selectedColor : hoverColor : this.yColor;
+            Color zColor = (_nearAxis == Axis.Z) ? (isTransforming) ? selectedColor : hoverColor : this.zColor;
+            Color allColor = (_nearAxis == Axis.Any) ? (isTransforming) ? selectedColor : hoverColor : this.allColor;
 
             //Note: The order of drawing the __axis decides what gets drawn over what.
 
-            TransformType moveOrScaleType = (transformType == TransformType.Scale || (isTransforming && translatingType == TransformType.Scale)) ? TransformType.Scale : TransformType.Move;
-            DrawQuads(handleLines.z, GetColor(moveOrScaleType, this.zColor, zColor, hasTranslatingAxisPlane));
-            DrawQuads(handleLines.x, GetColor(moveOrScaleType, this.xColor, xColor, hasTranslatingAxisPlane));
-            DrawQuads(handleLines.y, GetColor(moveOrScaleType, this.yColor, yColor, hasTranslatingAxisPlane));
+            TransformType moveOrScaleType = (transformType == TransformType.Scale || (isTransforming && _translatingType == TransformType.Scale)) ? TransformType.Scale : TransformType.Move;
+            DrawQuads(_handleLines.z, GetColor(moveOrScaleType, this.zColor, zColor, hasTranslatingAxisPlane));
+            DrawQuads(_handleLines.x, GetColor(moveOrScaleType, this.xColor, xColor, hasTranslatingAxisPlane));
+            DrawQuads(_handleLines.y, GetColor(moveOrScaleType, this.yColor, yColor, hasTranslatingAxisPlane));
 
-            DrawTriangles(handleTriangles.x, GetColor(TransformType.Move, this.xColor, xColor, hasTranslatingAxisPlane));
-            DrawTriangles(handleTriangles.y, GetColor(TransformType.Move, this.yColor, yColor, hasTranslatingAxisPlane));
-            DrawTriangles(handleTriangles.z, GetColor(TransformType.Move, this.zColor, zColor, hasTranslatingAxisPlane));
+            DrawTriangles(_handleTriangles.x, GetColor(TransformType.Move, this.xColor, xColor, hasTranslatingAxisPlane));
+            DrawTriangles(_handleTriangles.y, GetColor(TransformType.Move, this.yColor, yColor, hasTranslatingAxisPlane));
+            DrawTriangles(_handleTriangles.z, GetColor(TransformType.Move, this.zColor, zColor, hasTranslatingAxisPlane));
 
-            DrawQuads(handlePlanes.z, GetColor(TransformType.Move, this.zColor, zColor, planesOpacity, !hasTranslatingAxisPlane));
-            DrawQuads(handlePlanes.x, GetColor(TransformType.Move, this.xColor, xColor, planesOpacity, !hasTranslatingAxisPlane));
-            DrawQuads(handlePlanes.y, GetColor(TransformType.Move, this.yColor, yColor, planesOpacity, !hasTranslatingAxisPlane));
+            DrawQuads(_handlePlanes.z, GetColor(TransformType.Move, this.zColor, zColor, planesOpacity, !hasTranslatingAxisPlane));
+            DrawQuads(_handlePlanes.x, GetColor(TransformType.Move, this.xColor, xColor, planesOpacity, !hasTranslatingAxisPlane));
+            DrawQuads(_handlePlanes.y, GetColor(TransformType.Move, this.yColor, yColor, planesOpacity, !hasTranslatingAxisPlane));
 
-            DrawQuads(handleSquares.x, GetColor(TransformType.Scale, this.xColor, xColor));
-            DrawQuads(handleSquares.y, GetColor(TransformType.Scale, this.yColor, yColor));
-            DrawQuads(handleSquares.z, GetColor(TransformType.Scale, this.zColor, zColor));
-            DrawQuads(handleSquares.all, GetColor(TransformType.Scale, this.allColor, allColor));
+            DrawQuads(_handleSquares.x, GetColor(TransformType.Scale, this.xColor, xColor));
+            DrawQuads(_handleSquares.y, GetColor(TransformType.Scale, this.yColor, yColor));
+            DrawQuads(_handleSquares.z, GetColor(TransformType.Scale, this.zColor, zColor));
+            DrawQuads(_handleSquares.all, GetColor(TransformType.Scale, this.allColor, allColor));
 
-            DrawQuads(circlesLines.all, GetColor(TransformType.Rotate, this.allColor, allColor));
-            DrawQuads(circlesLines.x, GetColor(TransformType.Rotate, this.xColor, xColor));
-            DrawQuads(circlesLines.y, GetColor(TransformType.Rotate, this.yColor, yColor));
-            DrawQuads(circlesLines.z, GetColor(TransformType.Rotate, this.zColor, zColor));
+            DrawQuads(_circlesLines.all, GetColor(TransformType.Rotate, this.allColor, allColor));
+            DrawQuads(_circlesLines.x, GetColor(TransformType.Rotate, this.xColor, xColor));
+            DrawQuads(_circlesLines.y, GetColor(TransformType.Rotate, this.yColor, yColor));
+            DrawQuads(_circlesLines.z, GetColor(TransformType.Rotate, this.zColor, zColor));
         }
 
         #endregion
@@ -398,7 +398,7 @@ namespace RuntimeGizmos
 
             if (!isTransforming)
             {
-                translatingType = transformType;
+                _translatingType = transformType;
             }
         }
         /// <summary>
@@ -450,9 +450,9 @@ namespace RuntimeGizmos
         {
             if (mainTargetRoot != null)
             {
-                if (nearAxis != Axis.None && Input.GetMouseButtonDown(0))
+                if (_nearAxis != Axis.None && Input.GetMouseButtonDown(0))
                 {
-                    StartCoroutine(TransformSelected(translatingType));
+                    StartCoroutine(TransformSelected(_translatingType));
                 }
             }
         }
@@ -469,7 +469,7 @@ namespace RuntimeGizmos
 
             Vector3 __originalPivot = pivotPoint;
             Vector3 __otherAxis1;
-			Vector3 __otherAxis2;
+            Vector3 __otherAxis2;
             Vector3 __axis = GetNearAxisDirection(out __otherAxis1, out __otherAxis2);
             Vector3 __planeNormal = hasTranslatingAxisPlane ? __axis : (transform.position - __originalPivot).normalized;
             Vector3 __projectedAxis = Vector3.ProjectOnPlane(__axis, __planeNormal).normalized;
@@ -596,7 +596,7 @@ namespace RuntimeGizmos
         }
         protected void TransformSelected_HandleScale(Vector3 _mousePosition, Vector3 _previousMousePosition, Vector3 _projectedAxis, Vector3 _axis, float _currentSnapScaleAmount, Vector3 _originalPivot, bool _isSnapping)
         {
-            Vector3 __projected = (nearAxis == Axis.Any) ? transform.right : _projectedAxis;
+            Vector3 __projected = (_nearAxis == Axis.Any) ? transform.right : _projectedAxis;
             float __scaleAmount = ExtVector3.MagnitudeInDirection(_mousePosition - _previousMousePosition, __projected) * scaleSpeedMultiplier;
 
             if (_isSnapping && scaleSnap > 0)
@@ -616,13 +616,13 @@ namespace RuntimeGizmos
 
             Vector3 __localAxis = _axis;
 
-            if (GetProperTransformSpace() == TransformSpace.Local && nearAxis != Axis.Any)
+            if (GetProperTransformSpace() == TransformSpace.Local && _nearAxis != Axis.Any)
             {
                 __localAxis = mainTargetRoot.InverseTransformDirection(_axis);
             }
 
             Vector3 __targetScaleAmount = __localAxis * __scaleAmount;
-            if (nearAxis == Axis.Any)
+            if (_nearAxis == Axis.Any)
             {
                 __targetScaleAmount = (ExtVector3.Abs(mainTargetRoot.localScale.normalized) * __scaleAmount);
             }
@@ -662,7 +662,7 @@ namespace RuntimeGizmos
             float __rotateAmount = 0;
             Vector3 __rotationAxis = _axis;
 
-            if (nearAxis == Axis.Any)
+            if (_nearAxis == Axis.Any)
             {
                 Vector3 __rotation = transform.TransformDirection(new Vector3(Input.GetAxis("Mouse Y"), -Input.GetAxis("Mouse X"), 0));
                 Quaternion.Euler(__rotation).ToAngleAxis(out __rotateAmount, out __rotationAxis);
@@ -677,7 +677,7 @@ namespace RuntimeGizmos
                 }
                 else
                 {
-                    Vector3 __projected = (nearAxis == Axis.Any || ExtVector3.IsParallel(_axis, _planeNormal)) ? _planeNormal : Vector3.Cross(_axis, _planeNormal);
+                    Vector3 __projected = (_nearAxis == Axis.Any || ExtVector3.IsParallel(_axis, _planeNormal)) ? _planeNormal : Vector3.Cross(_axis, _planeNormal);
                     __rotateAmount = (ExtVector3.MagnitudeInDirection(_mousePosition - _previousMousePosition, __projected) * (rotateSpeedMultiplier * 100f)) / GetDistanceMultiplier();
                 }
             }
@@ -716,47 +716,64 @@ namespace RuntimeGizmos
 
             totalRotationAmount *= Quaternion.Euler(__rotationAxis * __rotateAmount);
         }
-        private float CalculateSnapAmount(float snapValue, float currentAmount, out float remainder)
+        /// <summary>
+        /// Takes an input float value and a snap input, and outputs a value floored to the closest snap value.
+        /// </summary>
+        /// <param name="_snapValue">The size of each "cells" on the snap "grid".</param>
+        /// <param name="_currentAmount">The floating number you want to round.</param>
+        /// <param name="_remainder">The output rounded value.</param>
+        /// <returns>A float representing the given value, snapped to the closest "point" on a snap "grid".</returns>
+		private float CalculateSnapAmount(float _snapValue, float _currentAmount, out float _remainder)
         {
-            remainder = 0;
-            if (snapValue <= 0) return currentAmount;
+            _remainder = 0;
 
-            float currentAmountAbs = Mathf.Abs(currentAmount);
-            if (currentAmountAbs > snapValue)
+            if (_snapValue <= 0)
             {
-                remainder = currentAmountAbs % snapValue;
-                return snapValue * (Mathf.Sign(currentAmount) * Mathf.Floor(currentAmountAbs / snapValue));
+                return _currentAmount;
+            }
+
+            float __currentAmountAbs = Mathf.Abs(_currentAmount);
+            if (__currentAmountAbs > _snapValue)
+            {
+                _remainder = __currentAmountAbs % _snapValue;
+                return _snapValue * (Mathf.Sign(_currentAmount) * Mathf.Floor(__currentAmountAbs / _snapValue));
             }
 
             return 0;
         }
-        private Vector3 GetNearAxisDirection(out Vector3 __otherAxis1, out Vector3 __otherAxis2)
-        {
-            __otherAxis1 = __otherAxis2 = Vector3.zero;
 
-            if (nearAxis != Axis.None)
+		/// <summary>
+		/// Calculates the direction of the near axis, resulting in a vector3 and the two other directions.
+		/// </summary>
+		/// <param name="_otherAxis1">First other direction of the vector when calculating the near axis' direction.</param>
+		/// <param name="_otherAxis2">Second other direction of the vector when calculating the near axis' direction.</param>
+		/// <returns>A UnityEngine.Vector3 containing the direction of the near axis.</returns>
+        private Vector3 GetNearAxisDirection(out Vector3 _otherAxis1, out Vector3 _otherAxis2)
+        {
+			_otherAxis2 = Vector3.zero;
+            _otherAxis1 = Vector3.zero;
+
+            if (_nearAxis != Axis.None)
             {
-                if (nearAxis == Axis.X)
+                switch (_nearAxis)
                 {
-                    __otherAxis1 = axisInfo.yDirection;
-                    __otherAxis2 = axisInfo.zDirection;
-                    return axisInfo.xDirection;
-                }
-                if (nearAxis == Axis.Y)
-                {
-                    __otherAxis1 = axisInfo.xDirection;
-                    __otherAxis2 = axisInfo.zDirection;
-                    return axisInfo.yDirection;
-                }
-                if (nearAxis == Axis.Z)
-                {
-                    __otherAxis1 = axisInfo.xDirection;
-                    __otherAxis2 = axisInfo.yDirection;
-                    return axisInfo.zDirection;
-                }
-                if (nearAxis == Axis.Any)
-                {
-                    return Vector3.one;
+                    case Axis.X:
+                        _otherAxis1 = _axisInfo.yDirection;
+                        _otherAxis2 = _axisInfo.zDirection;
+                        return _axisInfo.xDirection;
+
+                    case Axis.Y:
+                        _otherAxis1 = _axisInfo.xDirection;
+                        _otherAxis2 = _axisInfo.zDirection;
+                        return _axisInfo.yDirection;
+
+                    case Axis.Z:
+                        _otherAxis1 = _axisInfo.xDirection;
+                        _otherAxis2 = _axisInfo.yDirection;
+                        return _axisInfo.zDirection;
+
+                    case Axis.Any:
+                        return Vector3.one;
                 }
             }
 
@@ -764,7 +781,7 @@ namespace RuntimeGizmos
         }
         private void GetTarget()
         {
-            if (nearAxis == Axis.None && Input.GetMouseButtonDown(0))
+            if (_nearAxis == Axis.None && Input.GetMouseButtonDown(0))
             {
                 bool isAdding = Input.GetKey(GameInputs.addSelection);
                 bool isRemoving = Input.GetKey(GameInputs.removeSelection);
@@ -807,28 +824,28 @@ namespace RuntimeGizmos
         {
             if (target != null)
             {
-                GetTargetRenderers(target, renderersBuffer);
+                GetTargetRenderers(target, _renderersBuffer);
 
-                for (int i = 0; i < renderersBuffer.Count; i++)
+                for (int i = 0; i < _renderersBuffer.Count; i++)
                 {
-                    Renderer render = renderersBuffer[i];
+                    Renderer render = _renderersBuffer[i];
 
-                    if (!highlightedRenderers.Contains(render))
+                    if (!_highlightedRenderers.Contains(render))
                     {
-                        materialsBuffer.Clear();
-                        materialsBuffer.AddRange(render.sharedMaterials);
+                        _materialsBuffer.Clear();
+                        _materialsBuffer.AddRange(render.sharedMaterials);
 
-                        if (!materialsBuffer.Contains(outlineMaterial))
+                        if (!_materialsBuffer.Contains(_outlineMaterial))
                         {
-                            materialsBuffer.Add(outlineMaterial);
-                            render.materials = materialsBuffer.ToArray();
+                            _materialsBuffer.Add(_outlineMaterial);
+                            render.materials = _materialsBuffer.ToArray();
                         }
 
-                        highlightedRenderers.Add(render);
+                        _highlightedRenderers.Add(render);
                     }
                 }
 
-                materialsBuffer.Clear();
+                _materialsBuffer.Clear();
             }
         }
         private void GetTargetRenderers(Transform target, List<Renderer> renderers)
@@ -841,54 +858,54 @@ namespace RuntimeGizmos
         }
         private void ClearAllHighlightedRenderers()
         {
-            foreach (var target in targetRoots)
+            foreach (var target in _targetRoots)
             {
                 RemoveTargetHighlightedRenderers(target.Key);
             }
 
             //In case any are still left, such as if they changed parents or what not when they were highlighted.
-            renderersBuffer.Clear();
-            renderersBuffer.AddRange(highlightedRenderers);
-            RemoveHighlightedRenderers(renderersBuffer);
+            _renderersBuffer.Clear();
+            _renderersBuffer.AddRange(_highlightedRenderers);
+            RemoveHighlightedRenderers(_renderersBuffer);
         }
         private void RemoveTargetHighlightedRenderers(Transform target)
         {
-            GetTargetRenderers(target, renderersBuffer);
+            GetTargetRenderers(target, _renderersBuffer);
 
-            RemoveHighlightedRenderers(renderersBuffer);
+            RemoveHighlightedRenderers(_renderersBuffer);
         }
         private void RemoveHighlightedRenderers(List<Renderer> renderers)
         {
-            for (int i = 0; i < renderersBuffer.Count; i++)
+            for (int i = 0; i < _renderersBuffer.Count; i++)
             {
-                Renderer render = renderersBuffer[i];
+                Renderer render = _renderersBuffer[i];
                 if (render != null)
                 {
-                    materialsBuffer.Clear();
-                    materialsBuffer.AddRange(render.sharedMaterials);
+                    _materialsBuffer.Clear();
+                    _materialsBuffer.AddRange(render.sharedMaterials);
 
-                    if (materialsBuffer.Contains(outlineMaterial))
+                    if (_materialsBuffer.Contains(_outlineMaterial))
                     {
-                        materialsBuffer.Remove(outlineMaterial);
-                        render.materials = materialsBuffer.ToArray();
+                        _materialsBuffer.Remove(_outlineMaterial);
+                        render.materials = _materialsBuffer.ToArray();
                     }
                 }
 
-                highlightedRenderers.Remove(render);
+                _highlightedRenderers.Remove(render);
             }
 
-            renderersBuffer.Clear();
+            _renderersBuffer.Clear();
         }
         private void AddTargetRoot(Transform targetRoot)
         {
-            targetRoots.Add(targetRoot, new TargetInfo());
+            _targetRoots.Add(targetRoot, new TargetInfo());
             _targetRootsOrdered.Add(targetRoot);
 
             AddAllChildren(targetRoot);
         }
         private void RemoveTargetRoot(Transform targetRoot)
         {
-            if (targetRoots.Remove(targetRoot))
+            if (_targetRoots.Remove(targetRoot))
             {
                 _targetRootsOrdered.Remove(targetRoot);
 
@@ -897,43 +914,43 @@ namespace RuntimeGizmos
         }
         private void AddAllChildren(Transform target)
         {
-            childrenBuffer.Clear();
-            target.GetComponentsInChildren<Transform>(true, childrenBuffer);
-            childrenBuffer.Remove(target);
+            _childrenBuffer.Clear();
+            target.GetComponentsInChildren<Transform>(true, _childrenBuffer);
+            _childrenBuffer.Remove(target);
 
-            for (int i = 0; i < childrenBuffer.Count; i++)
+            for (int i = 0; i < _childrenBuffer.Count; i++)
             {
-                Transform child = childrenBuffer[i];
-                children.Add(child);
+                Transform child = _childrenBuffer[i];
+                _children.Add(child);
                 RemoveTargetRoot(child); //We do this in case we selected child first and then the parent.
             }
 
-            childrenBuffer.Clear();
+            _childrenBuffer.Clear();
         }
         private void RemoveAllChildren(Transform target)
         {
-            childrenBuffer.Clear();
-            target.GetComponentsInChildren<Transform>(true, childrenBuffer);
-            childrenBuffer.Remove(target);
+            _childrenBuffer.Clear();
+            target.GetComponentsInChildren<Transform>(true, _childrenBuffer);
+            _childrenBuffer.Remove(target);
 
-            for (int i = 0; i < childrenBuffer.Count; i++)
+            for (int i = 0; i < _childrenBuffer.Count; i++)
             {
-                children.Remove(childrenBuffer[i]);
+                _children.Remove(_childrenBuffer[i]);
             }
 
-            childrenBuffer.Clear();
+            _childrenBuffer.Clear();
         }
         private void SetPivotPointOffset(Vector3 offset)
         {
             pivotPoint += offset;
-            totalCenterPivotPoint += offset;
+            _totalCenterPivotPoint += offset;
         }
         private IEnumerator ForceUpdatePivotPointAtEndOfFrame()
         {
             while (this.enabled)
             {
                 ForceUpdatePivotPointOnChange();
-                yield return waitForEndOFFrame;
+                yield return _waitForEndOFFrame;
             }
         }
         private void ForceUpdatePivotPointOnChange()
@@ -943,7 +960,7 @@ namespace RuntimeGizmos
                 if (mainTargetRoot != null && !isTransforming)
                 {
                     bool hasSet = false;
-                    Dictionary<Transform, TargetInfo>.Enumerator targets = targetRoots.GetEnumerator();
+                    Dictionary<Transform, TargetInfo>.Enumerator targets = _targetRoots.GetEnumerator();
                     while (targets.MoveNext())
                     {
                         if (!hasSet)
@@ -971,43 +988,43 @@ namespace RuntimeGizmos
             float distanceMultiplier = GetDistanceMultiplier();
             float handleMinSelectedDistanceCheck = (this.minSelectedDistanceCheck + handleWidth) * distanceMultiplier;
 
-            if (nearAxis == Axis.None && (TransformTypeContains(TransformType.Move) || TransformTypeContains(TransformType.Scale)))
+            if (_nearAxis == Axis.None && (TransformTypeContains(TransformType.Move) || TransformTypeContains(TransformType.Scale)))
             {
                 //Important to check scale lines before move lines since in TransformType.All the move planes would block the scales center scale all gizmo.
-                if (nearAxis == Axis.None && TransformTypeContains(TransformType.Scale))
+                if (_nearAxis == Axis.None && TransformTypeContains(TransformType.Scale))
                 {
                     float tipMinSelectedDistanceCheck = (this.minSelectedDistanceCheck + boxSize) * distanceMultiplier;
-                    HandleNearestPlanes(TransformType.Scale, handleSquares, tipMinSelectedDistanceCheck);
+                    HandleNearestPlanes(TransformType.Scale, _handleSquares, tipMinSelectedDistanceCheck);
                 }
 
-                if (nearAxis == Axis.None && TransformTypeContains(TransformType.Move))
+                if (_nearAxis == Axis.None && TransformTypeContains(TransformType.Move))
                 {
                     //Important to check the planes first before the handle tip since it makes selecting the planes easier.
                     float planeMinSelectedDistanceCheck = (this.minSelectedDistanceCheck + planeSize) * distanceMultiplier;
-                    HandleNearestPlanes(TransformType.Move, handlePlanes, planeMinSelectedDistanceCheck);
+                    HandleNearestPlanes(TransformType.Move, _handlePlanes, planeMinSelectedDistanceCheck);
 
-                    if (nearAxis != Axis.None)
+                    if (_nearAxis != Axis.None)
                     {
-                        planeAxis = nearAxis;
+                        _planeAxis = _nearAxis;
                     }
                     else
                     {
                         float tipMinSelectedDistanceCheck = (this.minSelectedDistanceCheck + triangleSize) * distanceMultiplier;
-                        HandleNearestLines(TransformType.Move, handleTriangles, tipMinSelectedDistanceCheck);
+                        HandleNearestLines(TransformType.Move, _handleTriangles, tipMinSelectedDistanceCheck);
                     }
                 }
 
-                if (nearAxis == Axis.None)
+                if (_nearAxis == Axis.None)
                 {
                     //Since Move and Scale share the same handle line, we give Move the priority.
                     TransformType _transformType = transformType == TransformType.All ? TransformType.Move : transformType;
-                    HandleNearestLines(_transformType, handleLines, handleMinSelectedDistanceCheck);
+                    HandleNearestLines(_transformType, _handleLines, handleMinSelectedDistanceCheck);
                 }
             }
 
-            if (nearAxis == Axis.None && TransformTypeContains(TransformType.Rotate))
+            if (_nearAxis == Axis.None && TransformTypeContains(TransformType.Rotate))
             {
-                HandleNearestLines(TransformType.Rotate, circlesLines, handleMinSelectedDistanceCheck);
+                HandleNearestLines(TransformType.Rotate, _circlesLines, handleMinSelectedDistanceCheck);
             }
         }
         private void HandleNearestLines(TransformType type, AxisVectors axisVectors, float minSelectedDistanceCheck)
@@ -1109,7 +1126,7 @@ namespace RuntimeGizmos
         {
             if (mainTargetRoot != null)
             {
-                axisInfo.Set(mainTargetRoot, pivotPoint, GetProperTransformSpace());
+                _axisInfo.Set(mainTargetRoot, pivotPoint, GetProperTransformSpace());
             }
         }
         private void SetLines()
@@ -1118,11 +1135,11 @@ namespace RuntimeGizmos
             SetHandlePlanes();
             SetHandleTriangles();
             SetHandleSquares();
-            SetCircles(GetAxisInfo(), circlesLines);
+            SetCircles(GetAxisInfo(), _circlesLines);
         }
         private void SetHandleLines()
         {
-            handleLines.Clear();
+            _handleLines.Clear();
 
             if (TranslatingTypeContains(TransformType.Move) || TranslatingTypeContains(TransformType.Scale))
             {
@@ -1142,9 +1159,9 @@ namespace RuntimeGizmos
                     zLineLength = GetHandleLength(TransformType.Scale, Axis.Z);
                 }
 
-                AddQuads(pivotPoint, axisInfo.xDirection, axisInfo.yDirection, axisInfo.zDirection, xLineLength, lineWidth, handleLines.x);
-                AddQuads(pivotPoint, axisInfo.yDirection, axisInfo.xDirection, axisInfo.zDirection, yLineLength, lineWidth, handleLines.y);
-                AddQuads(pivotPoint, axisInfo.zDirection, axisInfo.xDirection, axisInfo.yDirection, zLineLength, lineWidth, handleLines.z);
+                AddQuads(pivotPoint, _axisInfo.xDirection, _axisInfo.yDirection, _axisInfo.zDirection, xLineLength, lineWidth, _handleLines.x);
+                AddQuads(pivotPoint, _axisInfo.yDirection, _axisInfo.xDirection, _axisInfo.zDirection, yLineLength, lineWidth, _handleLines.y);
+                AddQuads(pivotPoint, _axisInfo.zDirection, _axisInfo.xDirection, _axisInfo.yDirection, zLineLength, lineWidth, _handleLines.z);
             }
         }
         private int AxisDirectionMultiplier(Vector3 direction, Vector3 otherDirection)
@@ -1153,42 +1170,42 @@ namespace RuntimeGizmos
         }
         private void SetHandlePlanes()
         {
-            handlePlanes.Clear();
+            _handlePlanes.Clear();
 
             if (TranslatingTypeContains(TransformType.Move))
             {
                 Vector3 pivotToCamera = mainCamera.transform.position - pivotPoint;
-                float cameraXSign = Mathf.Sign(Vector3.Dot(axisInfo.xDirection, pivotToCamera));
-                float cameraYSign = Mathf.Sign(Vector3.Dot(axisInfo.yDirection, pivotToCamera));
-                float cameraZSign = Mathf.Sign(Vector3.Dot(axisInfo.zDirection, pivotToCamera));
+                float cameraXSign = Mathf.Sign(Vector3.Dot(_axisInfo.xDirection, pivotToCamera));
+                float cameraYSign = Mathf.Sign(Vector3.Dot(_axisInfo.yDirection, pivotToCamera));
+                float cameraZSign = Mathf.Sign(Vector3.Dot(_axisInfo.zDirection, pivotToCamera));
 
                 float planeSize = this.planeSize;
                 if (transformType == TransformType.All) { planeSize *= allMoveHandleLengthMultiplier; }
                 planeSize *= GetDistanceMultiplier();
 
-                Vector3 xDirection = (axisInfo.xDirection * planeSize) * cameraXSign;
-                Vector3 yDirection = (axisInfo.yDirection * planeSize) * cameraYSign;
-                Vector3 zDirection = (axisInfo.zDirection * planeSize) * cameraZSign;
+                Vector3 xDirection = (_axisInfo.xDirection * planeSize) * cameraXSign;
+                Vector3 yDirection = (_axisInfo.yDirection * planeSize) * cameraYSign;
+                Vector3 zDirection = (_axisInfo.zDirection * planeSize) * cameraZSign;
 
                 Vector3 xPlaneCenter = pivotPoint + (yDirection + zDirection);
                 Vector3 yPlaneCenter = pivotPoint + (xDirection + zDirection);
                 Vector3 zPlaneCenter = pivotPoint + (xDirection + yDirection);
 
-                AddQuad(xPlaneCenter, axisInfo.yDirection, axisInfo.zDirection, planeSize, handlePlanes.x);
-                AddQuad(yPlaneCenter, axisInfo.xDirection, axisInfo.zDirection, planeSize, handlePlanes.y);
-                AddQuad(zPlaneCenter, axisInfo.xDirection, axisInfo.yDirection, planeSize, handlePlanes.z);
+                AddQuad(xPlaneCenter, _axisInfo.yDirection, _axisInfo.zDirection, planeSize, _handlePlanes.x);
+                AddQuad(yPlaneCenter, _axisInfo.xDirection, _axisInfo.zDirection, planeSize, _handlePlanes.y);
+                AddQuad(zPlaneCenter, _axisInfo.xDirection, _axisInfo.yDirection, planeSize, _handlePlanes.z);
             }
         }
         private void SetHandleTriangles()
         {
-            handleTriangles.Clear();
+            _handleTriangles.Clear();
 
             if (TranslatingTypeContains(TransformType.Move))
             {
                 float triangleLength = triangleSize * GetDistanceMultiplier();
-                AddTriangles(axisInfo.GetXAxisEnd(GetHandleLength(TransformType.Move)), axisInfo.xDirection, axisInfo.yDirection, axisInfo.zDirection, triangleLength, handleTriangles.x);
-                AddTriangles(axisInfo.GetYAxisEnd(GetHandleLength(TransformType.Move)), axisInfo.yDirection, axisInfo.xDirection, axisInfo.zDirection, triangleLength, handleTriangles.y);
-                AddTriangles(axisInfo.GetZAxisEnd(GetHandleLength(TransformType.Move)), axisInfo.zDirection, axisInfo.yDirection, axisInfo.xDirection, triangleLength, handleTriangles.z);
+                AddTriangles(_axisInfo.GetXAxisEnd(GetHandleLength(TransformType.Move)), _axisInfo.xDirection, _axisInfo.yDirection, _axisInfo.zDirection, triangleLength, _handleTriangles.x);
+                AddTriangles(_axisInfo.GetYAxisEnd(GetHandleLength(TransformType.Move)), _axisInfo.yDirection, _axisInfo.xDirection, _axisInfo.zDirection, triangleLength, _handleTriangles.y);
+                AddTriangles(_axisInfo.GetZAxisEnd(GetHandleLength(TransformType.Move)), _axisInfo.zDirection, _axisInfo.yDirection, _axisInfo.xDirection, triangleLength, _handleTriangles.z);
             }
         }
         private void AddTriangles(Vector3 axisEnd, Vector3 axisDirection, Vector3 axisOtherDirection1, Vector3 axisOtherDirection2, float size, List<Vector3> resultsBuffer)
@@ -1212,15 +1229,15 @@ namespace RuntimeGizmos
         }
         private void SetHandleSquares()
         {
-            handleSquares.Clear();
+            _handleSquares.Clear();
 
             if (TranslatingTypeContains(TransformType.Scale))
             {
                 float boxSize = this.boxSize * GetDistanceMultiplier();
-                AddSquares(axisInfo.GetXAxisEnd(GetHandleLength(TransformType.Scale, Axis.X)), axisInfo.xDirection, axisInfo.yDirection, axisInfo.zDirection, boxSize, handleSquares.x);
-                AddSquares(axisInfo.GetYAxisEnd(GetHandleLength(TransformType.Scale, Axis.Y)), axisInfo.yDirection, axisInfo.xDirection, axisInfo.zDirection, boxSize, handleSquares.y);
-                AddSquares(axisInfo.GetZAxisEnd(GetHandleLength(TransformType.Scale, Axis.Z)), axisInfo.zDirection, axisInfo.xDirection, axisInfo.yDirection, boxSize, handleSquares.z);
-                AddSquares(pivotPoint - (axisInfo.xDirection * (boxSize * .5f)), axisInfo.xDirection, axisInfo.yDirection, axisInfo.zDirection, boxSize, handleSquares.all);
+                AddSquares(_axisInfo.GetXAxisEnd(GetHandleLength(TransformType.Scale, Axis.X)), _axisInfo.xDirection, _axisInfo.yDirection, _axisInfo.zDirection, boxSize, _handleSquares.x);
+                AddSquares(_axisInfo.GetYAxisEnd(GetHandleLength(TransformType.Scale, Axis.Y)), _axisInfo.yDirection, _axisInfo.xDirection, _axisInfo.zDirection, boxSize, _handleSquares.y);
+                AddSquares(_axisInfo.GetZAxisEnd(GetHandleLength(TransformType.Scale, Axis.Z)), _axisInfo.zDirection, _axisInfo.xDirection, _axisInfo.yDirection, boxSize, _handleSquares.z);
+                AddSquares(pivotPoint - (_axisInfo.xDirection * (boxSize * .5f)), _axisInfo.xDirection, _axisInfo.yDirection, _axisInfo.zDirection, boxSize, _handleSquares.all);
             }
         }
         private void AddSquares(Vector3 axisStart, Vector3 axisDirection, Vector3 axisOtherDirection1, Vector3 axisOtherDirection2, float size, List<Vector3> resultsBuffer)
@@ -1276,16 +1293,16 @@ namespace RuntimeGizmos
             square.topRight = axisEnd - offsetDown;
             return square;
         }
-        private void SetCircles(AxisInfo axisInfo, AxisVectors axisVectors)
+        private void SetCircles(AxisInfo _axisInfo, AxisVectors axisVectors)
         {
             axisVectors.Clear();
 
             if (TranslatingTypeContains(TransformType.Rotate))
             {
                 float circleLength = GetHandleLength(TransformType.Rotate);
-                AddCircle(pivotPoint, axisInfo.xDirection, circleLength, axisVectors.x);
-                AddCircle(pivotPoint, axisInfo.yDirection, circleLength, axisVectors.y);
-                AddCircle(pivotPoint, axisInfo.zDirection, circleLength, axisVectors.z);
+                AddCircle(pivotPoint, _axisInfo.xDirection, circleLength, axisVectors.x);
+                AddCircle(pivotPoint, _axisInfo.yDirection, circleLength, axisVectors.y);
+                AddCircle(pivotPoint, _axisInfo.zDirection, circleLength, axisVectors.z);
                 AddCircle(pivotPoint, (pivotPoint - transform.position).normalized, circleLength, axisVectors.all, false);
             }
         }
@@ -1411,14 +1428,14 @@ namespace RuntimeGizmos
         /// </summary>
 		private void SetMaterial()
         {
-            if (lineMaterial == null)
+            if (_lineMaterial == null)
             {
-                lineMaterial = new Material(Shader.Find("Custom/Lines"));
+                _lineMaterial = new Material(Shader.Find("Custom/Lines"));
             }
 
-            if (outlineMaterial == null)
+            if (_outlineMaterial == null)
             {
-                outlineMaterial = new Material(Shader.Find("Custom/Outline"));
+                _outlineMaterial = new Material(Shader.Find("Custom/Outline"));
             }
         }
 
@@ -1436,7 +1453,7 @@ namespace RuntimeGizmos
         }
         public bool TranslatingTypeContains(TransformType type, bool checkIsTransforming = true)
         {
-            TransformType _transformType = !checkIsTransforming || isTransforming ? translatingType : transformType;
+            TransformType _transformType = !checkIsTransforming || isTransforming ? _translatingType : transformType;
             return TransformTypeContains(_transformType, type);
         }
         public bool TransformTypeContains(TransformType mainType, TransformType type)
@@ -1478,17 +1495,17 @@ namespace RuntimeGizmos
             float __magnitudeInDirection = ExtVector3.MagnitudeInDirection(pivotPoint - transform.position, mainCamera.transform.forward);
             return Mathf.Max(0.01f, Mathf.Abs(__magnitudeInDirection));
         }
-        public void SetTranslatingAxis(TransformType type, Axis __axis, Axis planeAxis = Axis.None)
+        public void SetTranslatingAxis(TransformType type, Axis __axis, Axis _planeAxis = Axis.None)
         {
-            this.translatingType = type;
-            this.nearAxis = __axis;
-            this.planeAxis = planeAxis;
+            this._translatingType = type;
+            this._nearAxis = __axis;
+            this._planeAxis = _planeAxis;
         }
         public AxisInfo GetAxisInfo()
         {
-            AxisInfo currentAxisInfo = axisInfo;
+            AxisInfo currentAxisInfo = _axisInfo;
 
-            if (isTransforming && GetProperTransformSpace() == TransformSpace.Global && translatingType == TransformType.Rotate)
+            if (isTransforming && GetProperTransformSpace() == TransformSpace.Global && _translatingType == TransformType.Rotate)
             {
                 currentAxisInfo.xDirection = totalRotationAmount * Vector3.right;
                 currentAxisInfo.yDirection = totalRotationAmount * Vector3.up;
@@ -1507,27 +1524,27 @@ namespace RuntimeGizmos
                 }
                 else if (pivot == TransformPivot.Center)
                 {
-                    totalCenterPivotPoint = Vector3.zero;
+                    _totalCenterPivotPoint = Vector3.zero;
 
-                    Dictionary<Transform, TargetInfo>.Enumerator targetsEnumerator = targetRoots.GetEnumerator(); //We avoid foreach to avoid garbage.
+                    Dictionary<Transform, TargetInfo>.Enumerator targetsEnumerator = _targetRoots.GetEnumerator(); //We avoid foreach to avoid garbage.
                     while (targetsEnumerator.MoveNext())
                     {
                         Transform target = targetsEnumerator.Current.Key;
                         TargetInfo info = targetsEnumerator.Current.Value;
                         info.centerPivotPoint = target.GetCenter(centerType);
 
-                        totalCenterPivotPoint += info.centerPivotPoint;
+                        _totalCenterPivotPoint += info.centerPivotPoint;
                     }
 
-                    totalCenterPivotPoint /= targetRoots.Count;
+                    _totalCenterPivotPoint /= _targetRoots.Count;
 
                     if (centerType == CenterType.Solo)
                     {
-                        pivotPoint = targetRoots[mainTargetRoot].centerPivotPoint;
+                        pivotPoint = _targetRoots[mainTargetRoot].centerPivotPoint;
                     }
                     else if (centerType == CenterType.All)
                     {
-                        pivotPoint = totalCenterPivotPoint;
+                        pivotPoint = _totalCenterPivotPoint;
                     }
                 }
             }
@@ -1536,8 +1553,8 @@ namespace RuntimeGizmos
         {
             if (target != null)
             {
-                if (targetRoots.ContainsKey(target)) return;
-                if (children.Contains(target)) return;
+                if (_targetRoots.ContainsKey(target)) return;
+                if (_children.Contains(target)) return;
 
                 if (addCommand) UndoRedoManager.Insert(new AddTargetCommand(this, target, _targetRootsOrdered));
 
@@ -1551,7 +1568,7 @@ namespace RuntimeGizmos
         {
             if (target != null)
             {
-                if (!targetRoots.ContainsKey(target)) return;
+                if (!_targetRoots.ContainsKey(target)) return;
 
                 if (addCommand) UndoRedoManager.Insert(new RemoveTargetCommand(this, target));
 
@@ -1566,9 +1583,9 @@ namespace RuntimeGizmos
             if (addCommand) UndoRedoManager.Insert(new ClearTargetsCommand(this, _targetRootsOrdered));
 
             ClearAllHighlightedRenderers();
-            targetRoots.Clear();
+            _targetRoots.Clear();
             _targetRootsOrdered.Clear();
-            children.Clear();
+            _children.Clear();
         }
 
         #endregion
