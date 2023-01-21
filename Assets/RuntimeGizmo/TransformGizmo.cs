@@ -1,8 +1,11 @@
-using System;
-using UnityEngine;
 using System.Collections.Generic;
 using System.Collections;
+using System;
+
+using UnityEngine;
+
 using CommandUndoRedo;
+using VipereSolide.User.Inputs;
 
 namespace RuntimeGizmos
 {
@@ -11,6 +14,7 @@ namespace RuntimeGizmos
 	//For example, if you select an object that has children, move the children elsewhere, deselect the original object, then try to add those old children to the selection, I think it wont work.
 
 	[RequireComponent(typeof(Camera))]
+	[DisallowMultipleComponent]
 	public class TransformGizmo : MonoBehaviour
 	{
 		public TransformSpace space = TransformSpace.Global;
@@ -18,23 +22,6 @@ namespace RuntimeGizmos
 		public TransformPivot pivot = TransformPivot.Pivot;
 		public CenterType centerType = CenterType.All;
 		public ScaleType scaleType = ScaleType.FromPoint;
-
-		//These are the same as the unity editor hotkeys
-		public KeyCode SetMoveType = KeyCode.W;
-		public KeyCode SetRotateType = KeyCode.E;
-		public KeyCode SetScaleType = KeyCode.R;
-		//public KeyCode SetRectToolType = KeyCode.T;
-		public KeyCode SetAllTransformType = KeyCode.Y;
-		public KeyCode SetSpaceToggle = KeyCode.X;
-		public KeyCode SetPivotModeToggle = KeyCode.Z;
-		public KeyCode SetCenterTypeToggle = KeyCode.C;
-		public KeyCode SetScaleTypeToggle = KeyCode.S;
-		public KeyCode translationSnapping = KeyCode.LeftControl;
-		public KeyCode AddSelection = KeyCode.LeftShift;
-		public KeyCode RemoveSelection = KeyCode.LeftControl;
-		public KeyCode ActionKey = KeyCode.LeftShift; //Its set to shift instead of control so that while in the editor we dont accidentally undo editor changes =/
-		public KeyCode UndoAction = KeyCode.Z;
-		public KeyCode RedoAction = KeyCode.Y;
 
 		public Color xColor = new Color(1, 0, 0, 0.8f);
 		public Color yColor = new Color(0, 1, 0, 0.8f);
@@ -128,6 +115,10 @@ namespace RuntimeGizmos
 		static Material lineMaterial;
 		static Material outlineMaterial;
 
+		#region Methods
+
+		#region Unity
+
 		private void Awake()
 		{
 			myCamera = GetComponent<Camera>();
@@ -217,6 +208,9 @@ namespace RuntimeGizmos
 			DrawQuads(circlesLines.z, GetColor(TransformType.Rotate, this.zColor, zColor));
 		}
 
+		#endregion
+		#region Behaviour
+
 		private Color GetColor(TransformType type, Color normalColor, Color nearColor, bool forceUseNormal = false)
 		{
 			return GetColor(type, normalColor, nearColor, false, 1, forceUseNormal);
@@ -247,13 +241,13 @@ namespace RuntimeGizmos
 		{
 			if(maxUndoStored != UndoRedoManager.maxUndoStored) { UndoRedoManager.maxUndoStored = maxUndoStored; }
 
-			if(Input.GetKey(ActionKey))
+			if(Input.GetKey(GameInputs.actionKey))
 			{
-				if(Input.GetKeyDown(UndoAction))
+				if(Input.GetKeyDown(GameInputs.undoAction))
 				{
 					UndoRedoManager.Undo();
 				}
-				else if(Input.GetKeyDown(RedoAction))
+				else if(Input.GetKeyDown(GameInputs.redoAction))
 				{
 					UndoRedoManager.Redo();
 				}
@@ -261,17 +255,17 @@ namespace RuntimeGizmos
 		}
 		private void SetSpaceAndType()
 		{
-			if(Input.GetKey(ActionKey)) return;
+			if(Input.GetKey(GameInputs.actionKey)) return;
 
-			if(Input.GetKeyDown(SetMoveType)) transformType = TransformType.Move;
-			else if(Input.GetKeyDown(SetRotateType)) transformType = TransformType.Rotate;
-			else if(Input.GetKeyDown(SetScaleType)) transformType = TransformType.Scale;
+			if(Input.GetKeyDown(GameInputs.setMoveType)) transformType = TransformType.Move;
+			else if(Input.GetKeyDown(GameInputs.setRotateType)) transformType = TransformType.Rotate;
+			else if(Input.GetKeyDown(GameInputs.setScaleType)) transformType = TransformType.Scale;
 			//else if(Input.GetKeyDown(SetRectToolType)) type = TransformType.RectTool;
-			else if(Input.GetKeyDown(SetAllTransformType)) transformType = TransformType.All;
+			else if(Input.GetKeyDown(GameInputs.setAllTransformType)) transformType = TransformType.All;
 
 			if(!isTransforming) translatingType = transformType;
 
-			if(Input.GetKeyDown(SetPivotModeToggle))
+			if(Input.GetKeyDown(GameInputs.setPivotModeToggle))
 			{
 				if(pivot == TransformPivot.Pivot) pivot = TransformPivot.Center;
 				else if(pivot == TransformPivot.Center) pivot = TransformPivot.Pivot;
@@ -279,7 +273,7 @@ namespace RuntimeGizmos
 				SetPivotPoint();
 			}
 
-			if(Input.GetKeyDown(SetCenterTypeToggle))
+			if(Input.GetKeyDown(GameInputs.setCenterTypeToggle))
 			{
 				if(centerType == CenterType.All) centerType = CenterType.Solo;
 				else if(centerType == CenterType.Solo) centerType = CenterType.All;
@@ -287,13 +281,13 @@ namespace RuntimeGizmos
 				SetPivotPoint();
 			}
 
-			if(Input.GetKeyDown(SetSpaceToggle))
+			if(Input.GetKeyDown(GameInputs.setSpaceToggle))
 			{
 				if(space == TransformSpace.Global) space = TransformSpace.Local;
 				else if(space == TransformSpace.Local) space = TransformSpace.Global;
 			}
 
-			if(Input.GetKeyDown(SetScaleTypeToggle))
+			if(Input.GetKeyDown(GameInputs.setScaleTypeToggle))
 			{
 				if(scaleType == ScaleType.FromPoint) scaleType = ScaleType.FromPointOffset;
 				else if(scaleType == ScaleType.FromPointOffset) scaleType = ScaleType.FromPoint;
@@ -342,7 +336,7 @@ namespace RuntimeGizmos
 			{
 				Ray mouseRay = myCamera.ScreenPointToRay(Input.mousePosition);
 				Vector3 mousePosition = Geometry.LinePlaneIntersect(mouseRay.origin, mouseRay.direction, originalPivot, planeNormal);
-				bool isSnapping = Input.GetKey(translationSnapping);
+				bool isSnapping = Input.GetKey(GameInputs.translationSnapping);
 
 				if(previousMousePosition != Vector3.zero && mousePosition != Vector3.zero)
 				{
@@ -584,8 +578,8 @@ namespace RuntimeGizmos
 		{
 			if(nearAxis == Axis.None && Input.GetMouseButtonDown(0))
 			{
-				bool isAdding = Input.GetKey(AddSelection);
-				bool isRemoving = Input.GetKey(RemoveSelection);
+				bool isAdding = Input.GetKey(GameInputs.addSelection);
+				bool isRemoving = Input.GetKey(GameInputs.removeSelection);
 
 				RaycastHit hitInfo; 
 				if(Physics.Raycast(myCamera.ScreenPointToRay(Input.mousePosition), out hitInfo, Mathf.Infinity, selectionMask))
@@ -1231,6 +1225,9 @@ namespace RuntimeGizmos
 			}
 		}
 	
+		#endregion
+		#region Public
+
 		//We only support scaling in local space.
 		public TransformSpace GetProperTransformSpace()
 		{
@@ -1365,5 +1362,9 @@ namespace RuntimeGizmos
 			targetRootsOrdered.Clear();
 			children.Clear();
 		}
+	
+		#endregion
+
+		#endregion
 	}
 }
