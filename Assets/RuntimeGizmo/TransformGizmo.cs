@@ -361,19 +361,52 @@ namespace RuntimeGizmos
                 }
             }
         }
-        private void SetSpaceAndType()
+        /// <summary>
+        /// Listens to user's inputs and updates corresponding transform space and type if necessary. Does not run if the action key is held down.
+        /// </summary>
+		private void SetSpaceAndType()
         {
-            if (Input.GetKey(GameInputs.actionKey)) return;
+            if (Input.GetKey(GameInputs.actionKey))
+			{
+				return;
+			}
 
-            if (Input.GetKeyDown(GameInputs.setMoveType)) transformType = TransformType.Move;
-            else if (Input.GetKeyDown(GameInputs.setRotateType)) transformType = TransformType.Rotate;
-            else if (Input.GetKeyDown(GameInputs.setScaleType)) transformType = TransformType.Scale;
-            //else if(Input.GetKeyDown(SetRectToolType)) type = TransformType.RectTool;
-            else if (Input.GetKeyDown(GameInputs.setAllTransformType)) transformType = TransformType.All;
+            GetTransformType();
+			GetTransformSpace();
+        }
+		/// <summary>
+		/// Listens to user's inputs and updates corresponding transform type if necessary.
+		/// </summary>
+		private void GetTransformType()
+		{
+			if (Input.GetKeyDown(GameInputs.setMoveType))
+			{
+				transformType = TransformType.Move;
+			}
+            else if (Input.GetKeyDown(GameInputs.setRotateType))
+			{
+				transformType = TransformType.Rotate;
+			}
+            else if (Input.GetKeyDown(GameInputs.setScaleType))
+			{
+				transformType = TransformType.Scale;
+			}
+            else if (Input.GetKeyDown(GameInputs.setAllTransformType))
+			{
+				transformType = TransformType.All;
+			}
 
-            if (!isTransforming) translatingType = transformType;
-
-            if (Input.GetKeyDown(GameInputs.setPivotModeToggle))
+			if (!isTransforming)
+			{
+				translatingType = transformType;
+			}
+		}
+        /// <summary>
+        /// Listens to user's inputs and updates corresponding transform space if necessary.
+        /// </summary>
+		private void GetTransformSpace()
+		{
+			if (Input.GetKeyDown(GameInputs.setPivotModeToggle))
             {
                 if (pivot == TransformPivot.Pivot) pivot = TransformPivot.Center;
                 else if (pivot == TransformPivot.Center) pivot = TransformPivot.Pivot;
@@ -401,12 +434,16 @@ namespace RuntimeGizmos
                 else if (scaleType == ScaleType.FromPointOffset) scaleType = ScaleType.FromPoint;
             }
 
-            if (transformType == TransformType.Scale)
+			if (transformType == TransformType.Scale)
             {
-                if (pivot == TransformPivot.Pivot) scaleType = ScaleType.FromPoint; //FromPointOffset can be inaccurate and should only really be used in Center mode if desired.
+                if (pivot == TransformPivot.Pivot)
+				{
+					//FromPointOffset can be inaccurate and should only really be used in Center mode if desired.
+					scaleType = ScaleType.FromPoint;
+				}
             }
-        }
-        private void TransformSelected()
+		}
+		private void TransformSelected()
         {
             if (mainTargetRoot != null)
             {
