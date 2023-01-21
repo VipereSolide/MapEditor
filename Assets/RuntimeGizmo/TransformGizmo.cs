@@ -51,7 +51,10 @@ namespace RuntimeGizmos
 
         [Tooltip("Mainly for if you want the pivot point to update correctly if selected objects are moving outside the transformgizmo. Might be poor on performance if lots of objects are selected...")]
         public bool forceUpdatePivotPointOnChange = true;
-        public bool manuallyHandleGizmo = false;
+        public bool manuallyHandleLineGizmo = false;
+        [SerializeField] private Material _lineMaterial;
+        public bool manuallyHandleOutlineGizmo = false;
+        [SerializeField] private Material _outlineMaterial;
 
         [Header("Undo/Redo")]
         public int maxUndoStored = 100;
@@ -176,9 +179,6 @@ namespace RuntimeGizmos
         private WaitForEndOfFrame _waitForEndOFFrame = new WaitForEndOfFrame();
         private Coroutine _forceUpdatePivotCoroutine;
 
-        private static Material _lineMaterial;
-        private static Material _outlineMaterial;
-
         #endregion
 
         #endregion
@@ -209,16 +209,20 @@ namespace RuntimeGizmos
         private void Update()
         {
             HandleUndoRedo();
-
             SetSpaceAndType();
 
-            if (manuallyHandleGizmo)
+            if (manuallyHandleLineGizmo || manuallyHandleOutlineGizmo)
             {
                 if (onCheckForSelectedAxis != null) onCheckForSelectedAxis();
             }
             else
             {
                 SetNearAxis();
+            }
+
+            if (VipereSolide.GameManager.IsPointerOverUIElement() == true)
+            {
+                return;
             }
 
             GetTarget();
@@ -234,7 +238,7 @@ namespace RuntimeGizmos
             //We run this in lateupdate since coroutines run after update and we want our gizmos to have the updated target transform position after TransformSelected()
             SetAxisInfo();
 
-            if (manuallyHandleGizmo)
+            if (manuallyHandleLineGizmo || manuallyHandleOutlineGizmo)
             {
                 if (onDrawCustomGizmo != null) onDrawCustomGizmo();
             }
@@ -245,7 +249,7 @@ namespace RuntimeGizmos
         }
         private void OnPostRender()
         {
-            if (mainTargetRoot == null || manuallyHandleGizmo) return;
+            if (mainTargetRoot == null || manuallyHandleLineGizmo || manuallyHandleOutlineGizmo) return;
 
             _lineMaterial.SetPass(0);
 
@@ -742,15 +746,15 @@ namespace RuntimeGizmos
             return 0;
         }
 
-		/// <summary>
-		/// Calculates the direction of the near axis, resulting in a vector3 and the two other directions.
-		/// </summary>
-		/// <param name="_otherAxis1">First other direction of the vector when calculating the near axis' direction.</param>
-		/// <param name="_otherAxis2">Second other direction of the vector when calculating the near axis' direction.</param>
-		/// <returns>A UnityEngine.Vector3 containing the direction of the near axis.</returns>
+        /// <summary>
+        /// Calculates the direction of the near axis, resulting in a vector3 and the two other directions.
+        /// </summary>
+        /// <param name="_otherAxis1">First other direction of the vector when calculating the near axis' direction.</param>
+        /// <param name="_otherAxis2">Second other direction of the vector when calculating the near axis' direction.</param>
+        /// <returns>A UnityEngine.Vector3 containing the direction of the near axis.</returns>
         private Vector3 GetNearAxisDirection(out Vector3 _otherAxis1, out Vector3 _otherAxis2)
         {
-			_otherAxis2 = Vector3.zero;
+            _otherAxis2 = Vector3.zero;
             _otherAxis1 = Vector3.zero;
 
             if (_nearAxis != Axis.None)
@@ -1428,12 +1432,12 @@ namespace RuntimeGizmos
         /// </summary>
 		private void SetMaterial()
         {
-            if (_lineMaterial == null)
+            if (_lineMaterial == null && !manuallyHandleLineGizmo)
             {
                 _lineMaterial = new Material(Shader.Find("Custom/Lines"));
             }
 
-            if (_outlineMaterial == null)
+            if (_outlineMaterial == null && !manuallyHandleOutlineGizmo)
             {
                 _outlineMaterial = new Material(Shader.Find("Custom/Outline"));
             }

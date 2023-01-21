@@ -27,7 +27,8 @@ namespace RuntimeGizmos
 				transformGizmo = GameObject.FindObjectOfType<TransformGizmo>();
 			}
 
-			transformGizmo.manuallyHandleGizmo = true;
+			transformGizmo.manuallyHandleLineGizmo = true;
+			transformGizmo.manuallyHandleOutlineGizmo = true;
 
 			//Since we are using a mesh, rotating can get weird due to how the rotation method works,
 			//so we use a different rotation method that will let us rotate by acting like our custom rotation gizmo is a wheel.
