@@ -128,26 +128,26 @@ namespace RuntimeGizmos
 		static Material lineMaterial;
 		static Material outlineMaterial;
 
-		void Awake()
+		private void Awake()
 		{
 			myCamera = GetComponent<Camera>();
 			SetMaterial();
 		}
-		void OnEnable()
+		private void OnEnable()
 		{
 			forceUpdatePivotCoroutine = StartCoroutine(ForceUpdatePivotPointAtEndOfFrame());
 		}
-		void OnDisable()
+		private void OnDisable()
 		{
 			ClearTargets(); //Just so things gets cleaned up, such as removing any materials we placed on objects.
 
 			StopCoroutine(forceUpdatePivotCoroutine);
 		}
-		void OnDestroy()
+		private void OnDestroy()
 		{
 			ClearAllHighlightedRenderers();
 		}
-		void Update()
+		private void Update()
 		{
 			HandleUndoRedo();
 
@@ -166,7 +166,7 @@ namespace RuntimeGizmos
 			
 			TransformSelected();
 		}
-		void LateUpdate()
+		private void LateUpdate()
 		{
 			if(mainTargetRoot == null) return;
 
@@ -180,7 +180,7 @@ namespace RuntimeGizmos
 				SetLines();
 			}
 		}
-		void OnPostRender()
+		private void OnPostRender()
 		{
 			if(mainTargetRoot == null || manuallyHandleGizmo) return;
 
@@ -217,15 +217,15 @@ namespace RuntimeGizmos
 			DrawQuads(circlesLines.z, GetColor(TransformType.Rotate, this.zColor, zColor));
 		}
 
-		Color GetColor(TransformType type, Color normalColor, Color nearColor, bool forceUseNormal = false)
+		private Color GetColor(TransformType type, Color normalColor, Color nearColor, bool forceUseNormal = false)
 		{
 			return GetColor(type, normalColor, nearColor, false, 1, forceUseNormal);
 		}
-		Color GetColor(TransformType type, Color normalColor, Color nearColor, float alpha, bool forceUseNormal = false)
+		private Color GetColor(TransformType type, Color normalColor, Color nearColor, float alpha, bool forceUseNormal = false)
 		{
 			return GetColor(type, normalColor, nearColor, true, alpha, forceUseNormal);
 		}
-		Color GetColor(TransformType type, Color normalColor, Color nearColor, bool setAlpha, float alpha, bool forceUseNormal = false)
+		private Color GetColor(TransformType type, Color normalColor, Color nearColor, bool setAlpha, float alpha, bool forceUseNormal = false)
 		{
 			Color color;
 			if(!forceUseNormal && TranslatingTypeContains(type, false))
@@ -243,7 +243,7 @@ namespace RuntimeGizmos
 			return color;
 		}
 
-		void HandleUndoRedo()
+		private void HandleUndoRedo()
 		{
 			if(maxUndoStored != UndoRedoManager.maxUndoStored) { UndoRedoManager.maxUndoStored = maxUndoStored; }
 
@@ -259,41 +259,7 @@ namespace RuntimeGizmos
 				}
 			}
 		}
-		//We only support scaling in local space.
-		public TransformSpace GetProperTransformSpace()
-		{
-			return transformType == TransformType.Scale ? TransformSpace.Local : space;
-		}
-		public bool TransformTypeContains(TransformType type)
-		{
-			return TransformTypeContains(transformType, type);
-		}
-		public bool TranslatingTypeContains(TransformType type, bool checkIsTransforming = true)
-		{
-			TransformType transType = !checkIsTransforming || isTransforming ? translatingType : transformType;
-			return TransformTypeContains(transType, type);
-		}
-		public bool TransformTypeContains(TransformType mainType, TransformType type)
-		{
-			return ExtTransformType.TransformTypeContains(mainType, type, GetProperTransformSpace());
-		}
-		public float GetHandleLength(TransformType type, Axis axis = Axis.None, bool multiplyDistanceMultiplier = true)
-		{
-			float length = handleLength;
-			if(transformType == TransformType.All)
-			{
-				if(type == TransformType.Move) length *= allMoveHandleLengthMultiplier;
-				if(type == TransformType.Rotate) length *= allRotateHandleLengthMultiplier;
-				if(type == TransformType.Scale) length *= allScaleHandleLengthMultiplier;
-			}
-
-			if(multiplyDistanceMultiplier) length *= GetDistanceMultiplier();
-
-			if(type == TransformType.Scale && isTransforming && (translatingAxis == axis || translatingAxis == Axis.Any)) length += totalScaleAmount;
-
-			return length;
-		}
-		void SetSpaceAndType()
+		private void SetSpaceAndType()
 		{
 			if(Input.GetKey(ActionKey)) return;
 
@@ -338,7 +304,7 @@ namespace RuntimeGizmos
 				if(pivot == TransformPivot.Pivot) scaleType = ScaleType.FromPoint; //FromPointOffset can be inaccurate and should only really be used in Center mode if desired.
 			}
 		}
-		void TransformSelected()
+		private void TransformSelected()
 		{
 			if(mainTargetRoot != null)
 			{
@@ -348,7 +314,7 @@ namespace RuntimeGizmos
 				}
 			}
 		}
-		IEnumerator TransformSelected(TransformType transType)
+		private IEnumerator TransformSelected(TransformType transType)
 		{
 			isTransforming = true;
 			totalScaleAmount = 0;
@@ -568,7 +534,7 @@ namespace RuntimeGizmos
 
 			SetPivotPoint();
 		}
-		float CalculateSnapAmount(float snapValue, float currentAmount, out float remainder)
+		private float CalculateSnapAmount(float snapValue, float currentAmount, out float remainder)
 		{
 			remainder = 0;
 			if(snapValue <= 0) return currentAmount;
@@ -582,7 +548,7 @@ namespace RuntimeGizmos
 
 			return 0;
 		}
-		Vector3 GetNearAxisDirection(out Vector3 otherAxis1, out Vector3 otherAxis2)
+		private Vector3 GetNearAxisDirection(out Vector3 otherAxis1, out Vector3 otherAxis2)
 		{
 			otherAxis1 = otherAxis2 = Vector3.zero;
 
@@ -614,7 +580,7 @@ namespace RuntimeGizmos
 
 			return Vector3.zero;
 		}
-		void GetTarget()
+		private void GetTarget()
 		{
 			if(nearAxis == Axis.None && Input.GetMouseButtonDown(0))
 			{
@@ -646,52 +612,14 @@ namespace RuntimeGizmos
 				}
 			}
 		}
-		public void AddTarget(Transform target, bool addCommand = true)
-		{
-			if(target != null)
-			{
-				if(targetRoots.ContainsKey(target)) return;
-				if(children.Contains(target)) return;
-
-				if(addCommand) UndoRedoManager.Insert(new AddTargetCommand(this, target, targetRootsOrdered));
-
-				AddTargetRoot(target);
-				AddTargetHighlightedRenderers(target);
-
-				SetPivotPoint();
-			}
-		}
-		public void RemoveTarget(Transform target, bool addCommand = true)
-		{
-			if(target != null)
-			{
-				if(!targetRoots.ContainsKey(target)) return;
-
-				if(addCommand) UndoRedoManager.Insert(new RemoveTargetCommand(this, target));
-
-				RemoveTargetHighlightedRenderers(target);
-				RemoveTargetRoot(target);
-
-				SetPivotPoint();
-			}
-		}
-		public void ClearTargets(bool addCommand = true)
-		{
-			if(addCommand) UndoRedoManager.Insert(new ClearTargetsCommand(this, targetRootsOrdered));
-
-			ClearAllHighlightedRenderers();
-			targetRoots.Clear();
-			targetRootsOrdered.Clear();
-			children.Clear();
-		}
-		void ClearAndAddTarget(Transform target)
+		private void ClearAndAddTarget(Transform target)
 		{
 			UndoRedoManager.Insert(new ClearAndAddTargetCommand(this, target, targetRootsOrdered));
 
 			ClearTargets(false);
 			AddTarget(target, false);
 		}
-		void AddTargetHighlightedRenderers(Transform target)
+		private void AddTargetHighlightedRenderers(Transform target)
 		{
 			if(target != null)
 			{
@@ -719,7 +647,7 @@ namespace RuntimeGizmos
 				materialsBuffer.Clear();
 			}
 		}
-		void GetTargetRenderers(Transform target, List<Renderer> renderers)
+		private void GetTargetRenderers(Transform target, List<Renderer> renderers)
 		{
 			renderers.Clear();
 			if(target != null)
@@ -727,7 +655,7 @@ namespace RuntimeGizmos
 				target.GetComponentsInChildren<Renderer>(true, renderers);
 			}
 		}
-		void ClearAllHighlightedRenderers()
+		private void ClearAllHighlightedRenderers()
 		{
 			foreach(var target in targetRoots)
 			{
@@ -739,13 +667,13 @@ namespace RuntimeGizmos
 			renderersBuffer.AddRange(highlightedRenderers);
 			RemoveHighlightedRenderers(renderersBuffer);
 		}
-		void RemoveTargetHighlightedRenderers(Transform target)
+		private void RemoveTargetHighlightedRenderers(Transform target)
 		{
 			GetTargetRenderers(target, renderersBuffer);
 
 			RemoveHighlightedRenderers(renderersBuffer);
 		}
-		void RemoveHighlightedRenderers(List<Renderer> renderers)
+		private void RemoveHighlightedRenderers(List<Renderer> renderers)
 		{
 			for(int i = 0; i < renderersBuffer.Count; i++)
 			{
@@ -767,14 +695,14 @@ namespace RuntimeGizmos
 
 			renderersBuffer.Clear();
 		}
-		void AddTargetRoot(Transform targetRoot)
+		private void AddTargetRoot(Transform targetRoot)
 		{
 			targetRoots.Add(targetRoot, new TargetInfo());
 			targetRootsOrdered.Add(targetRoot);
 
 			AddAllChildren(targetRoot);
 		}
-		void RemoveTargetRoot(Transform targetRoot)
+		private void RemoveTargetRoot(Transform targetRoot)
 		{
 			if(targetRoots.Remove(targetRoot))
 			{
@@ -783,7 +711,7 @@ namespace RuntimeGizmos
 				RemoveAllChildren(targetRoot);
 			}
 		}
-		void AddAllChildren(Transform target)
+		private void AddAllChildren(Transform target)
 		{
 			childrenBuffer.Clear();
 			target.GetComponentsInChildren<Transform>(true, childrenBuffer);
@@ -798,7 +726,7 @@ namespace RuntimeGizmos
 
 			childrenBuffer.Clear();
 		}
-		void RemoveAllChildren(Transform target)
+		private void RemoveAllChildren(Transform target)
 		{
 			childrenBuffer.Clear();
 			target.GetComponentsInChildren<Transform>(true, childrenBuffer);
@@ -811,47 +739,12 @@ namespace RuntimeGizmos
 
 			childrenBuffer.Clear();
 		}
-		public void SetPivotPoint()
-		{
-			if(mainTargetRoot != null)
-			{
-				if(pivot == TransformPivot.Pivot)
-				{
-					pivotPoint = mainTargetRoot.position;
-				}
-				else if(pivot == TransformPivot.Center)
-				{
-					totalCenterPivotPoint = Vector3.zero;
-
-					Dictionary<Transform, TargetInfo>.Enumerator targetsEnumerator = targetRoots.GetEnumerator(); //We avoid foreach to avoid garbage.
-					while(targetsEnumerator.MoveNext())
-					{
-						Transform target = targetsEnumerator.Current.Key;
-						TargetInfo info = targetsEnumerator.Current.Value;
-						info.centerPivotPoint = target.GetCenter(centerType);
-
-						totalCenterPivotPoint += info.centerPivotPoint;
-					}
-
-					totalCenterPivotPoint /= targetRoots.Count;
-
-					if(centerType == CenterType.Solo)
-					{
-						pivotPoint = targetRoots[mainTargetRoot].centerPivotPoint;
-					}
-					else if(centerType == CenterType.All)
-					{
-						pivotPoint = totalCenterPivotPoint;
-					}
-				}
-			}
-		}
-		void SetPivotPointOffset(Vector3 offset)
+		private void SetPivotPointOffset(Vector3 offset)
 		{
 			pivotPoint += offset;
 			totalCenterPivotPoint += offset;
 		}
-		IEnumerator ForceUpdatePivotPointAtEndOfFrame()
+		private IEnumerator ForceUpdatePivotPointAtEndOfFrame()
 		{
 			while(this.enabled)
 			{
@@ -859,7 +752,7 @@ namespace RuntimeGizmos
 				yield return waitForEndOFFrame;
 			}
 		}
-		void ForceUpdatePivotPointOnChange()
+		private void ForceUpdatePivotPointOnChange()
 		{
 			if(forceUpdatePivotPointOnChange)
 			{
@@ -883,26 +776,7 @@ namespace RuntimeGizmos
 				}
 			}
 		}
-		public void SetTranslatingAxis(TransformType type, Axis axis, Axis planeAxis = Axis.None)
-		{
-			this.translatingType = type;
-			this.nearAxis = axis;
-			this.planeAxis = planeAxis;
-		}
-		public AxisInfo GetAxisInfo()
-		{
-			AxisInfo currentAxisInfo = axisInfo;
-
-			if(isTransforming && GetProperTransformSpace() == TransformSpace.Global && translatingType == TransformType.Rotate)
-			{
-				currentAxisInfo.xDirection = totalRotationAmount * Vector3.right;
-				currentAxisInfo.yDirection = totalRotationAmount * Vector3.up;
-				currentAxisInfo.zDirection = totalRotationAmount * Vector3.forward;
-			}
-
-			return currentAxisInfo;
-		}
-		void SetNearAxis()
+		private void SetNearAxis()
 		{
 			if(isTransforming) return;
 
@@ -952,7 +826,7 @@ namespace RuntimeGizmos
 				HandleNearestLines(TransformType.Rotate, circlesLines, handleMinSelectedDistanceCheck);
 			}
 		}
-		void HandleNearestLines(TransformType type, AxisVectors axisVectors, float minSelectedDistanceCheck)
+		private void HandleNearestLines(TransformType type, AxisVectors axisVectors, float minSelectedDistanceCheck)
 		{
 			float xClosestDistance = ClosestDistanceFromMouseToLines(axisVectors.x);
 			float yClosestDistance = ClosestDistanceFromMouseToLines(axisVectors.y);
@@ -961,7 +835,7 @@ namespace RuntimeGizmos
 
 			HandleNearest(type, xClosestDistance, yClosestDistance, zClosestDistance, allClosestDistance, minSelectedDistanceCheck);
 		}
-		void HandleNearestPlanes(TransformType type, AxisVectors axisVectors, float minSelectedDistanceCheck)
+		private void HandleNearestPlanes(TransformType type, AxisVectors axisVectors, float minSelectedDistanceCheck)
 		{
 			float xClosestDistance = ClosestDistanceFromMouseToPlanes(axisVectors.x);
 			float yClosestDistance = ClosestDistanceFromMouseToPlanes(axisVectors.y);
@@ -970,7 +844,7 @@ namespace RuntimeGizmos
 
 			HandleNearest(type, xClosestDistance, yClosestDistance, zClosestDistance, allClosestDistance, minSelectedDistanceCheck);
 		}
-		void HandleNearest(TransformType type, float xClosestDistance, float yClosestDistance, float zClosestDistance, float allClosestDistance, float minSelectedDistanceCheck)
+		private void HandleNearest(TransformType type, float xClosestDistance, float yClosestDistance, float zClosestDistance, float allClosestDistance, float minSelectedDistanceCheck)
 		{
 			if(type == TransformType.Scale && allClosestDistance <= minSelectedDistanceCheck) SetTranslatingAxis(type, Axis.Any);
 			else if(xClosestDistance <= minSelectedDistanceCheck && xClosestDistance <= yClosestDistance && xClosestDistance <= zClosestDistance) SetTranslatingAxis(type, Axis.X);
@@ -983,7 +857,7 @@ namespace RuntimeGizmos
 				if((pivotPoint - mousePlaneHit).sqrMagnitude <= (GetHandleLength(TransformType.Rotate)).Squared()) SetTranslatingAxis(type, Axis.Any);
 			}
 		}
-		float ClosestDistanceFromMouseToLines(List<Vector3> lines)
+		private float ClosestDistanceFromMouseToLines(List<Vector3> lines)
 		{
 			Ray mouseRay = myCamera.ScreenPointToRay(Input.mousePosition);
 
@@ -999,7 +873,7 @@ namespace RuntimeGizmos
 			}
 			return closestDistance;
 		}
-		float ClosestDistanceFromMouseToPlanes(List<Vector3> planePoints)
+		private float ClosestDistanceFromMouseToPlanes(List<Vector3> planePoints)
 		{
 			float closestDistance = float.MaxValue;
 
@@ -1047,22 +921,14 @@ namespace RuntimeGizmos
 
 		//	return float.MaxValue;
 		//}
-		void SetAxisInfo()
+		private void SetAxisInfo()
 		{
 			if(mainTargetRoot != null)
 			{
 				axisInfo.Set(mainTargetRoot, pivotPoint, GetProperTransformSpace());
 			}
 		}
-		//This helps keep the size consistent no matter how far we are from it.
-		public float GetDistanceMultiplier()
-		{
-			if(mainTargetRoot == null) return 0f;
-
-			if(myCamera.orthographic) return Mathf.Max(.01f, myCamera.orthographicSize * 2f);
-			return Mathf.Max(.01f, Mathf.Abs(ExtVector3.MagnitudeInDirection(pivotPoint - transform.position, myCamera.transform.forward)));
-		}
-		void SetLines()
+		private void SetLines()
 		{
 			SetHandleLines();
 			SetHandlePlanes();
@@ -1070,7 +936,7 @@ namespace RuntimeGizmos
 			SetHandleSquares();
 			SetCircles(GetAxisInfo(), circlesLines);
 		}
-		void SetHandleLines()
+		private void SetHandleLines()
 		{
 			handleLines.Clear();
 
@@ -1097,11 +963,11 @@ namespace RuntimeGizmos
 				AddQuads(pivotPoint, axisInfo.zDirection, axisInfo.xDirection, axisInfo.yDirection, zLineLength, lineWidth, handleLines.z);
 			}
 		}
-		int AxisDirectionMultiplier(Vector3 direction, Vector3 otherDirection)
+		private int AxisDirectionMultiplier(Vector3 direction, Vector3 otherDirection)
 		{
 			return ExtVector3.IsInDirection(direction, otherDirection) ? 1 : -1;
 		}
-		void SetHandlePlanes()
+		private void SetHandlePlanes()
 		{
 			handlePlanes.Clear();
 
@@ -1129,7 +995,7 @@ namespace RuntimeGizmos
 				AddQuad(zPlaneCenter, axisInfo.xDirection, axisInfo.yDirection, planeSize, handlePlanes.z);
 			}
 		}
-		void SetHandleTriangles()
+		private void SetHandleTriangles()
 		{
 			handleTriangles.Clear();
 
@@ -1141,7 +1007,7 @@ namespace RuntimeGizmos
 				AddTriangles(axisInfo.GetZAxisEnd(GetHandleLength(TransformType.Move)), axisInfo.zDirection, axisInfo.yDirection, axisInfo.xDirection, triangleLength, handleTriangles.z);
 			}
 		}
-		void AddTriangles(Vector3 axisEnd, Vector3 axisDirection, Vector3 axisOtherDirection1, Vector3 axisOtherDirection2, float size, List<Vector3> resultsBuffer)
+		private void AddTriangles(Vector3 axisEnd, Vector3 axisDirection, Vector3 axisOtherDirection1, Vector3 axisOtherDirection2, float size, List<Vector3> resultsBuffer)
 		{
 			Vector3 endPoint = axisEnd + (axisDirection * (size * 2f));
 			Square baseSquare = GetBaseSquare(axisEnd, axisOtherDirection1, axisOtherDirection2, size / 2f);
@@ -1160,7 +1026,7 @@ namespace RuntimeGizmos
 				resultsBuffer.Add(endPoint);
 			}
 		}
-		void SetHandleSquares()
+		private void SetHandleSquares()
 		{
 			handleSquares.Clear();
 
@@ -1173,16 +1039,16 @@ namespace RuntimeGizmos
 				AddSquares(pivotPoint - (axisInfo.xDirection * (boxSize * .5f)), axisInfo.xDirection, axisInfo.yDirection, axisInfo.zDirection, boxSize, handleSquares.all);
 			}
 		}
-		void AddSquares(Vector3 axisStart, Vector3 axisDirection, Vector3 axisOtherDirection1, Vector3 axisOtherDirection2, float size, List<Vector3> resultsBuffer)
+		private void AddSquares(Vector3 axisStart, Vector3 axisDirection, Vector3 axisOtherDirection1, Vector3 axisOtherDirection2, float size, List<Vector3> resultsBuffer)
 		{
 			AddQuads(axisStart, axisDirection, axisOtherDirection1, axisOtherDirection2, size, size * .5f, resultsBuffer);
 		}
-		void AddQuads(Vector3 axisStart, Vector3 axisDirection, Vector3 axisOtherDirection1, Vector3 axisOtherDirection2, float length, float width, List<Vector3> resultsBuffer)
+		private void AddQuads(Vector3 axisStart, Vector3 axisDirection, Vector3 axisOtherDirection1, Vector3 axisOtherDirection2, float length, float width, List<Vector3> resultsBuffer)
 		{
 			Vector3 axisEnd = axisStart + (axisDirection * length);
 			AddQuads(axisStart, axisEnd, axisOtherDirection1, axisOtherDirection2, width, resultsBuffer);
 		}
-		void AddQuads(Vector3 axisStart, Vector3 axisEnd, Vector3 axisOtherDirection1, Vector3 axisOtherDirection2, float width, List<Vector3> resultsBuffer)
+		private void AddQuads(Vector3 axisStart, Vector3 axisEnd, Vector3 axisOtherDirection1, Vector3 axisOtherDirection2, float width, List<Vector3> resultsBuffer)
 		{
 			Square baseRectangle = GetBaseSquare(axisStart, axisOtherDirection1, axisOtherDirection2, width);
 			Square baseRectangleEnd = GetBaseSquare(axisEnd, axisOtherDirection1, axisOtherDirection2, width);
@@ -1205,7 +1071,7 @@ namespace RuntimeGizmos
 				resultsBuffer.Add(baseRectangle[i + 1]);
 			}
 		}
-		void AddQuad(Vector3 axisStart, Vector3 axisOtherDirection1, Vector3 axisOtherDirection2, float width, List<Vector3> resultsBuffer)
+		private void AddQuad(Vector3 axisStart, Vector3 axisOtherDirection1, Vector3 axisOtherDirection2, float width, List<Vector3> resultsBuffer)
 		{
 			Square baseRectangle = GetBaseSquare(axisStart, axisOtherDirection1, axisOtherDirection2, width);
 
@@ -1214,7 +1080,7 @@ namespace RuntimeGizmos
 			resultsBuffer.Add(baseRectangle.topRight);
 			resultsBuffer.Add(baseRectangle.bottomRight);
 		}
-		Square GetBaseSquare(Vector3 axisEnd, Vector3 axisOtherDirection1, Vector3 axisOtherDirection2, float size)
+		private Square GetBaseSquare(Vector3 axisEnd, Vector3 axisOtherDirection1, Vector3 axisOtherDirection2, float size)
 		{
 			Square square;
 			Vector3 offsetUp = ((axisOtherDirection1 * size) + (axisOtherDirection2 * size));
@@ -1226,7 +1092,7 @@ namespace RuntimeGizmos
 			square.topRight = axisEnd - offsetDown;
 			return square;
 		}
-		void SetCircles(AxisInfo axisInfo, AxisVectors axisVectors)
+		private void SetCircles(AxisInfo axisInfo, AxisVectors axisVectors)
 		{
 			axisVectors.Clear();
 
@@ -1239,7 +1105,7 @@ namespace RuntimeGizmos
 				AddCircle(pivotPoint, (pivotPoint - transform.position).normalized, circleLength, axisVectors.all, false);
 			}
 		}
-		void AddCircle(Vector3 origin, Vector3 axisDirection, float size, List<Vector3> resultsBuffer, bool depthTest = true)
+		private void AddCircle(Vector3 origin, Vector3 axisDirection, float size, List<Vector3> resultsBuffer, bool depthTest = true)
 		{
 			Vector3 up = axisDirection.normalized * size;
 			Vector3 forward = Vector3.Slerp(up, -up, .5f);
@@ -1285,7 +1151,7 @@ namespace RuntimeGizmos
 				lastPoint = nextPoint;
 			}
 		}
-		void DrawLines(List<Vector3> lines, Color color)
+		private void DrawLines(List<Vector3> lines, Color color)
 		{
 			if(lines.Count == 0) return;
 
@@ -1300,7 +1166,7 @@ namespace RuntimeGizmos
 
 			GL.End();
 		}
-		void DrawTriangles(List<Vector3> lines, Color color)
+		private void DrawTriangles(List<Vector3> lines, Color color)
 		{
 			if(lines.Count == 0) return;
 
@@ -1316,7 +1182,7 @@ namespace RuntimeGizmos
 
 			GL.End();
 		}
-		void DrawQuads(List<Vector3> lines, Color color)
+		private void DrawQuads(List<Vector3> lines, Color color)
 		{
 			if(lines.Count == 0) return;
 
@@ -1333,7 +1199,7 @@ namespace RuntimeGizmos
 
 			GL.End();
 		}
-		void DrawFilledCircle(List<Vector3> lines, Color color)
+		private void DrawFilledCircle(List<Vector3> lines, Color color)
 		{
 			if(lines.Count == 0) return;
 
@@ -1356,13 +1222,148 @@ namespace RuntimeGizmos
 
 			GL.End();
 		}
-		void SetMaterial()
+		private void SetMaterial()
 		{
 			if(lineMaterial == null)
 			{
 				lineMaterial = new Material(Shader.Find("Custom/Lines"));
 				outlineMaterial = new Material(Shader.Find("Custom/Outline"));
 			}
+		}
+	
+		//We only support scaling in local space.
+		public TransformSpace GetProperTransformSpace()
+		{
+			return transformType == TransformType.Scale ? TransformSpace.Local : space;
+		}
+		public bool TransformTypeContains(TransformType type)
+		{
+			return TransformTypeContains(transformType, type);
+		}
+		public bool TranslatingTypeContains(TransformType type, bool checkIsTransforming = true)
+		{
+			TransformType transType = !checkIsTransforming || isTransforming ? translatingType : transformType;
+			return TransformTypeContains(transType, type);
+		}
+		public bool TransformTypeContains(TransformType mainType, TransformType type)
+		{
+			return ExtTransformType.TransformTypeContains(mainType, type, GetProperTransformSpace());
+		}
+		public float GetHandleLength(TransformType type, Axis axis = Axis.None, bool multiplyDistanceMultiplier = true)
+		{
+			float length = handleLength;
+			if(transformType == TransformType.All)
+			{
+				if(type == TransformType.Move) length *= allMoveHandleLengthMultiplier;
+				if(type == TransformType.Rotate) length *= allRotateHandleLengthMultiplier;
+				if(type == TransformType.Scale) length *= allScaleHandleLengthMultiplier;
+			}
+
+			if(multiplyDistanceMultiplier) length *= GetDistanceMultiplier();
+
+			if(type == TransformType.Scale && isTransforming && (translatingAxis == axis || translatingAxis == Axis.Any)) length += totalScaleAmount;
+
+			return length;
+		}
+		//This helps keep the size consistent no matter how far we are from it.
+		public float GetDistanceMultiplier()
+		{
+			if(mainTargetRoot == null) return 0f;
+
+			if(myCamera.orthographic) return Mathf.Max(.01f, myCamera.orthographicSize * 2f);
+			return Mathf.Max(.01f, Mathf.Abs(ExtVector3.MagnitudeInDirection(pivotPoint - transform.position, myCamera.transform.forward)));
+		}
+		public void SetTranslatingAxis(TransformType type, Axis axis, Axis planeAxis = Axis.None)
+		{
+			this.translatingType = type;
+			this.nearAxis = axis;
+			this.planeAxis = planeAxis;
+		}
+		public AxisInfo GetAxisInfo()
+		{
+			AxisInfo currentAxisInfo = axisInfo;
+
+			if(isTransforming && GetProperTransformSpace() == TransformSpace.Global && translatingType == TransformType.Rotate)
+			{
+				currentAxisInfo.xDirection = totalRotationAmount * Vector3.right;
+				currentAxisInfo.yDirection = totalRotationAmount * Vector3.up;
+				currentAxisInfo.zDirection = totalRotationAmount * Vector3.forward;
+			}
+
+			return currentAxisInfo;
+		}
+		public void SetPivotPoint()
+		{
+			if(mainTargetRoot != null)
+			{
+				if(pivot == TransformPivot.Pivot)
+				{
+					pivotPoint = mainTargetRoot.position;
+				}
+				else if(pivot == TransformPivot.Center)
+				{
+					totalCenterPivotPoint = Vector3.zero;
+
+					Dictionary<Transform, TargetInfo>.Enumerator targetsEnumerator = targetRoots.GetEnumerator(); //We avoid foreach to avoid garbage.
+					while(targetsEnumerator.MoveNext())
+					{
+						Transform target = targetsEnumerator.Current.Key;
+						TargetInfo info = targetsEnumerator.Current.Value;
+						info.centerPivotPoint = target.GetCenter(centerType);
+
+						totalCenterPivotPoint += info.centerPivotPoint;
+					}
+
+					totalCenterPivotPoint /= targetRoots.Count;
+
+					if(centerType == CenterType.Solo)
+					{
+						pivotPoint = targetRoots[mainTargetRoot].centerPivotPoint;
+					}
+					else if(centerType == CenterType.All)
+					{
+						pivotPoint = totalCenterPivotPoint;
+					}
+				}
+			}
+		}
+		public void AddTarget(Transform target, bool addCommand = true)
+		{
+			if(target != null)
+			{
+				if(targetRoots.ContainsKey(target)) return;
+				if(children.Contains(target)) return;
+
+				if(addCommand) UndoRedoManager.Insert(new AddTargetCommand(this, target, targetRootsOrdered));
+
+				AddTargetRoot(target);
+				AddTargetHighlightedRenderers(target);
+
+				SetPivotPoint();
+			}
+		}
+		public void RemoveTarget(Transform target, bool addCommand = true)
+		{
+			if(target != null)
+			{
+				if(!targetRoots.ContainsKey(target)) return;
+
+				if(addCommand) UndoRedoManager.Insert(new RemoveTargetCommand(this, target));
+
+				RemoveTargetHighlightedRenderers(target);
+				RemoveTargetRoot(target);
+
+				SetPivotPoint();
+			}
+		}
+		public void ClearTargets(bool addCommand = true)
+		{
+			if(addCommand) UndoRedoManager.Insert(new ClearTargetsCommand(this, targetRootsOrdered));
+
+			ClearAllHighlightedRenderers();
+			targetRoots.Clear();
+			targetRootsOrdered.Clear();
+			children.Clear();
 		}
 	}
 }
