@@ -339,9 +339,15 @@ namespace RuntimeGizmos
             return __color;
         }
 
+		/// <summary>
+		/// Listens to undo and redo inputs and calls UndoRedoManager's corresponding methods if necessary.
+		/// </summary>
         private void HandleUndoRedo()
         {
-            if (maxUndoStored != UndoRedoManager.maxUndoStored) { UndoRedoManager.maxUndoStored = maxUndoStored; }
+            if (maxUndoStored != UndoRedoManager.maxUndoStored)
+			{
+				UndoRedoManager.maxUndoStored = maxUndoStored;
+			}
 
             if (Input.GetKey(GameInputs.actionKey))
             {
