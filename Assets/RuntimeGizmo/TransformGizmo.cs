@@ -17,34 +17,23 @@ namespace RuntimeGizmos
 	[DisallowMultipleComponent]
 	public class TransformGizmo : MonoBehaviour
 	{
+		#region Variables
+
+		#region Inspector
+
+		[Header("Tools State")]
 		public TransformSpace space = TransformSpace.Global;
 		public TransformType transformType = TransformType.Move;
 		public TransformPivot pivot = TransformPivot.Pivot;
 		public CenterType centerType = CenterType.All;
 		public ScaleType scaleType = ScaleType.FromPoint;
 
-		public Color xColor = new Color(1, 0, 0, 0.8f);
-		public Color yColor = new Color(0, 1, 0, 0.8f);
-		public Color zColor = new Color(0, 0, 1, 0.8f);
-		public Color allColor = new Color(.7f, .7f, .7f, 0.8f);
-		public Color selectedColor = new Color(1, 1, 0, 0.8f);
-		public Color hoverColor = new Color(1, .75f, 0, 0.8f);
-		public float planesOpacity = .5f;
-		//public Color rectPivotColor = new Color(0, 0, 1, 0.8f);
-		//public Color rectCornerColor = new Color(0, 0, 1, 0.8f);
-		//public Color rectAnchorColor = new Color(.7f, .7f, .7f, 0.8f);
-		//public Color rectLineColor = new Color(.7f, .7f, .7f, 0.8f);
-
+		[Header("Snapping")]
 		public float movementSnap = .25f;
 		public float rotationSnap = 15f;
 		public float scaleSnap = 1f;
 
-		public float handleLength = .25f;
-		public float handleWidth = .003f;
-		public float planeSize = .035f;
-		public float triangleSize = .03f;
-		public float boxSize = .03f;
-		public int circleDetail = 40;
+		[Header("Multipliers")]
 		public float allMoveHandleLengthMultiplier = 1f;
 		public float allRotateHandleLengthMultiplier = 1.4f;
 		public float allScaleHandleLengthMultiplier = 1.6f;
@@ -54,66 +43,115 @@ namespace RuntimeGizmos
 		public float rotateSpeedMultiplier = 1f;
 		public float allRotateSpeedMultiplier = 20f;
 
+		[Header("Tool Miscellaneous Settings")]
 		public bool useFirstSelectedAsMain = true;
+		
+		[Tooltip("If circularRotationMethod is true, when rotating you will need to move your mouse around the object as if turning a wheel. If circularRotationMethod is false, when rotating you can just click and drag in a line to rotate.")]
+		public bool circularRotationMethod = false;
 
-		//If circularRotationMethod is true, when rotating you will need to move your mouse around the object as if turning a wheel.
-		//If circularRotationMethod is false, when rotating you can just click and drag in a line to rotate.
-		public bool circularRotationMethod;
-
-		//Mainly for if you want the pivot point to update correctly if selected objects are moving outside the transformgizmo.
-		//Might be poor on performance if lots of objects are selected...
+		[Tooltip("Mainly for if you want the pivot point to update correctly if selected objects are moving outside the transformgizmo. Might be poor on performance if lots of objects are selected...")]
 		public bool forceUpdatePivotPointOnChange = true;
+		public bool manuallyHandleGizmo = false;
 
+		[Header("Undo/Redo")]
 		public int maxUndoStored = 100;
 
-		public bool manuallyHandleGizmo;
+		[Header("Graphics")]
+		public Color xColor = new Color(1, 0, 0, 0.8f);
+		public Color yColor = new Color(0, 1, 0, 0.8f);
+		public Color zColor = new Color(0, 0, 1, 0.8f);
+		public Color allColor = new Color(.7f, .7f, .7f, 0.8f);
+		public Color selectedColor = new Color(1, 1, 0, 0.8f);
+		public Color hoverColor = new Color(1, .75f, 0, 0.8f);
+		public float planesOpacity = .5f;
 
+		[Space]
+		public float handleLength = .25f;
+		public float handleWidth = .003f;
+		public float planeSize = .035f;
+		public float triangleSize = .03f;
+		public float boxSize = .03f;
+		public int circleDetail = 40;
+
+		[Header("Masks")]
 		public LayerMask selectionMask = Physics.DefaultRaycastLayers;
 
 		public Action onCheckForSelectedAxis;
 		public Action onDrawCustomGizmo;
 
-		public Camera myCamera {get; private set;}
+		#endregion
+		#region Getters/Setters
+		public Camera mainCamera {
+			get;
+			private set;}
+		public bool isTransforming {
+			get;
+			private set;}
+		public float totalScaleAmount {
+			get;
+			private set;}
+		public Quaternion totalRotationAmount {
+			get;
+			private set;}
+		public Axis translatingAxis {
+			get
+			{
+				return nearAxis;}}
+		public Axis translatingAxisPlane {
+			get {
+				return planeAxis;}}
+		public bool hasTranslatingAxisPlane {
+			get {
+				return translatingAxisPlane != Axis.None && translatingAxisPlane != Axis.Any;}}
+		public TransformType transformingType {
+			get {
+				return translatingType;}}
+		public Vector3 pivotPoint {
+			get;
+			 private set;}
+		public Transform mainTargetRoot {
+			get {
+				if (targetRootsOrdered.Count == 0)
+				{
+					return null;
+				}
 
-		public bool isTransforming {get; private set;}
-		public float totalScaleAmount {get; private set;}
-		public Quaternion totalRotationAmount {get; private set;}
-		public Axis translatingAxis {get {return nearAxis;}}
-		public Axis translatingAxisPlane {get {return planeAxis;}}
-		public bool hasTranslatingAxisPlane {get {return translatingAxisPlane != Axis.None && translatingAxisPlane != Axis.Any;}}
-		public TransformType transformingType {get {return translatingType;}}
+				return (useFirstSelectedAsMain) ? targetRootsOrdered[0] : targetRootsOrdered[targetRootsOrdered.Count - 1];}}
 
-		public Vector3 pivotPoint {get; private set;}
-		Vector3 totalCenterPivotPoint;
+		#endregion
+		#region Private
 
-		public Transform mainTargetRoot {get {return (targetRootsOrdered.Count > 0) ? (useFirstSelectedAsMain) ? targetRootsOrdered[0] : targetRootsOrdered[targetRootsOrdered.Count - 1] : null;}}
+		private Vector3 totalCenterPivotPoint;
+		private AxisInfo axisInfo;
+		private Axis nearAxis = Axis.None;
+		private Axis planeAxis = Axis.None;
+		private TransformType translatingType;
 
-		AxisInfo axisInfo;
-		Axis nearAxis = Axis.None;
-		Axis planeAxis = Axis.None;
-		TransformType translatingType;
-
-		AxisVectors handleLines = new AxisVectors();
-		AxisVectors handlePlanes = new AxisVectors();
-		AxisVectors handleTriangles = new AxisVectors();
-		AxisVectors handleSquares = new AxisVectors();
-		AxisVectors circlesLines = new AxisVectors();
+		private AxisVectors handleLines = new AxisVectors();
+		private AxisVectors handlePlanes = new AxisVectors();
+		private AxisVectors handleTriangles = new AxisVectors();
+		private AxisVectors handleSquares = new AxisVectors();
+		private AxisVectors circlesLines = new AxisVectors();
 
 		//We use a HashSet and a List for targetRoots so that we get fast lookup with the hashset while also keeping track of the order with the list.
-		List<Transform> targetRootsOrdered = new List<Transform>();
-		Dictionary<Transform, TargetInfo> targetRoots = new Dictionary<Transform, TargetInfo>();
-		HashSet<Renderer> highlightedRenderers = new HashSet<Renderer>();
-		HashSet<Transform> children = new HashSet<Transform>();
+		private List<Transform> targetRootsOrdered = new List<Transform>();
+		private Dictionary<Transform, TargetInfo> targetRoots = new Dictionary<Transform, TargetInfo>();
+		private HashSet<Renderer> highlightedRenderers = new HashSet<Renderer>();
+		private HashSet<Transform> children = new HashSet<Transform>();
 
-		List<Transform> childrenBuffer = new List<Transform>();
-		List<Renderer> renderersBuffer = new List<Renderer>();
-		List<Material> materialsBuffer = new List<Material>();
+		private List<Transform> childrenBuffer = new List<Transform>();
+		private List<Renderer> renderersBuffer = new List<Renderer>();
+		private List<Material> materialsBuffer = new List<Material>();
 
-		WaitForEndOfFrame waitForEndOFFrame = new WaitForEndOfFrame();
-		Coroutine forceUpdatePivotCoroutine;
+		private WaitForEndOfFrame waitForEndOFFrame = new WaitForEndOfFrame();
+		private Coroutine forceUpdatePivotCoroutine;
 
-		static Material lineMaterial;
-		static Material outlineMaterial;
+		private static Material lineMaterial;
+		private static Material outlineMaterial;
+
+		#endregion
+
+		#endregion
 
 		#region Methods
 
@@ -121,7 +159,7 @@ namespace RuntimeGizmos
 
 		private void Awake()
 		{
-			myCamera = GetComponent<Camera>();
+			mainCamera = GetComponent<Camera>();
 			SetMaterial();
 		}
 		private void OnEnable()
@@ -334,7 +372,7 @@ namespace RuntimeGizmos
 
 			while(!Input.GetMouseButtonUp(0))
 			{
-				Ray mouseRay = myCamera.ScreenPointToRay(Input.mousePosition);
+				Ray mouseRay = mainCamera.ScreenPointToRay(Input.mousePosition);
 				Vector3 mousePosition = Geometry.LinePlaneIntersect(mouseRay.origin, mouseRay.direction, originalPivot, planeNormal);
 				bool isSnapping = Input.GetKey(GameInputs.translationSnapping);
 
@@ -582,7 +620,7 @@ namespace RuntimeGizmos
 				bool isRemoving = Input.GetKey(GameInputs.removeSelection);
 
 				RaycastHit hitInfo; 
-				if(Physics.Raycast(myCamera.ScreenPointToRay(Input.mousePosition), out hitInfo, Mathf.Infinity, selectionMask))
+				if(Physics.Raycast(mainCamera.ScreenPointToRay(Input.mousePosition), out hitInfo, Mathf.Infinity, selectionMask))
 				{
 					Transform target = hitInfo.transform;
 
@@ -846,14 +884,14 @@ namespace RuntimeGizmos
 			else if(zClosestDistance <= minSelectedDistanceCheck && zClosestDistance <= xClosestDistance && zClosestDistance <= yClosestDistance) SetTranslatingAxis(type, Axis.Z);
 			else if(type == TransformType.Rotate && mainTargetRoot != null)
 			{
-				Ray mouseRay = myCamera.ScreenPointToRay(Input.mousePosition);
+				Ray mouseRay = mainCamera.ScreenPointToRay(Input.mousePosition);
 				Vector3 mousePlaneHit = Geometry.LinePlaneIntersect(mouseRay.origin, mouseRay.direction, pivotPoint, (transform.position - pivotPoint).normalized);
 				if((pivotPoint - mousePlaneHit).sqrMagnitude <= (GetHandleLength(TransformType.Rotate)).Squared()) SetTranslatingAxis(type, Axis.Any);
 			}
 		}
 		private float ClosestDistanceFromMouseToLines(List<Vector3> lines)
 		{
-			Ray mouseRay = myCamera.ScreenPointToRay(Input.mousePosition);
+			Ray mouseRay = mainCamera.ScreenPointToRay(Input.mousePosition);
 
 			float closestDistance = float.MaxValue;
 			for(int i = 0; i + 1 < lines.Count; i++)
@@ -873,7 +911,7 @@ namespace RuntimeGizmos
 
 			if(planePoints.Count >= 4)
 			{
-				Ray mouseRay = myCamera.ScreenPointToRay(Input.mousePosition);
+				Ray mouseRay = mainCamera.ScreenPointToRay(Input.mousePosition);
 
 				for(int i = 0; i < planePoints.Count; i += 4)
 				{
@@ -900,7 +938,7 @@ namespace RuntimeGizmos
 		//{
 		//	if(planeLines.Count >= 4)
 		//	{
-		//		Ray mouseRay = myCamera.ScreenPointToRay(Input.mousePosition);
+		//		Ray mouseRay = mainCamera.ScreenPointToRay(Input.mousePosition);
 		//		Plane plane = new Plane(planeLines[0], planeLines[1], planeLines[2]);
 
 		//		float distanceToPlane;
@@ -967,7 +1005,7 @@ namespace RuntimeGizmos
 
 			if(TranslatingTypeContains(TransformType.Move))
 			{
-				Vector3 pivotToCamera = myCamera.transform.position - pivotPoint;
+				Vector3 pivotToCamera = mainCamera.transform.position - pivotPoint;
 				float cameraXSign = Mathf.Sign(Vector3.Dot(axisInfo.xDirection, pivotToCamera));
 				float cameraYSign = Mathf.Sign(Vector3.Dot(axisInfo.yDirection, pivotToCamera));
 				float cameraZSign = Mathf.Sign(Vector3.Dot(axisInfo.zDirection, pivotToCamera));
@@ -1267,8 +1305,8 @@ namespace RuntimeGizmos
 		{
 			if(mainTargetRoot == null) return 0f;
 
-			if(myCamera.orthographic) return Mathf.Max(.01f, myCamera.orthographicSize * 2f);
-			return Mathf.Max(.01f, Mathf.Abs(ExtVector3.MagnitudeInDirection(pivotPoint - transform.position, myCamera.transform.forward)));
+			if(mainCamera.orthographic) return Mathf.Max(.01f, mainCamera.orthographicSize * 2f);
+			return Mathf.Max(.01f, Mathf.Abs(ExtVector3.MagnitudeInDirection(pivotPoint - transform.position, mainCamera.transform.forward)));
 		}
 		public void SetTranslatingAxis(TransformType type, Axis axis, Axis planeAxis = Axis.None)
 		{
