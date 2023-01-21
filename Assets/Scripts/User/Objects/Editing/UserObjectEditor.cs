@@ -7,6 +7,7 @@ using System;
 namespace VipereSolide.User.Objects.Editing
 {
     using Extentions;
+    using Grids;
 
     [DisallowMultipleComponent]
     public class UserObjectEditor : MonoBehaviour
@@ -21,6 +22,9 @@ namespace VipereSolide.User.Objects.Editing
         [Space]
         [SerializeField] protected GameObject _objectCreationAreaPrefab;
         [SerializeField] protected Transform _objectCreationAreaPrefabContainer;
+
+        [Space]
+        [SerializeField] protected GameObject _createdObjectPrefab;
 
         protected GameObject _selectionPoint;
         protected GameObject _objectCreationArea;
@@ -107,6 +111,11 @@ namespace VipereSolide.User.Objects.Editing
 
                 _objectCreationArea.gameObject.SetActive(true);
                 _executeObjectCreationAreaActions = true;
+
+                if (_objectEditingActionState == 3)
+                {
+                    CreateObject();
+                }
             }
             else
             {
@@ -119,6 +128,17 @@ namespace VipereSolide.User.Objects.Editing
 
                 _objectCreationArea.gameObject.SetActive(false);
             }
+        }
+
+        private void CreateObject()
+        {
+            GameObject __newObject = Instantiate(_createdObjectPrefab);
+            __newObject.transform.position = _objectCreationArea.transform.position;
+            __newObject.transform.localScale = _objectCreationArea.transform.localScale;
+
+            _objectEditingActionState = 0;
+            Destroy(_secondCreationSelectionPoint);
+            _objectCreationArea.gameObject.SetActive(false);
         }
 
         private void ExecuteObjectCreationAreaActions()
@@ -136,14 +156,15 @@ namespace VipereSolide.User.Objects.Editing
             float __scaleY = 0.01f;
 
             // https://docs.unity3d.com/ScriptReference/Plane.Raycast.html
-            if (_objectEditingActionState == 2)
+            if (_objectEditingActionState >= 2)
             {
                 Vector3 __directionFromCamera = (_userCamera.transform.position - _secondCreationSelectionPoint.transform.position).normalized;
                 Vector3 __directionEulerAngles = Quaternion.LookRotation(__directionFromCamera).eulerAngles.SetX(90);
                 GameObject __plane = GameObject.CreatePrimitive(PrimitiveType.Plane);
+                __plane.GetComponent<MeshRenderer>().enabled = false;
                 __plane.transform.position = _secondCreationSelectionPoint.transform.position;
                 __plane.transform.eulerAngles = __directionEulerAngles;
-                __plane.transform.localScale = Vector3.one * 100f;
+                __plane.transform.localScale = Vector3.one * 1000f;
 
                 __plane.transform.name = "colliding bitch";
 
@@ -153,23 +174,25 @@ namespace VipereSolide.User.Objects.Editing
 
                 if (__intersect)
                 {
-                    Debug.Log(__intersectEnter.point + " : " + __intersectEnter.transform.name);
-                    _selectionPoint.transform.position = _secondCreationSelectionPoint.transform.position;
-                    _selectionPoint.transform.position.SetY(__intersectEnter.point.y);
+                    _selectionPoint.transform.position = new Vector3(
+                        _secondCreationSelectionPoint.transform.position.x,
+                        __intersectEnter.point.y,
+                        _secondCreationSelectionPoint.transform.position.z).GetGrid();
                 }
 
-                Destroy(__plane);
+                Destroy(__plane, 0.1f);
 
                 __scaleX = Mathf.Abs(_firstCreationSelectionPoint.transform.position.x - _secondCreationSelectionPoint.transform.position.x);
                 __scaleZ = Mathf.Abs(_firstCreationSelectionPoint.transform.position.z - _secondCreationSelectionPoint.transform.position.z);
                 __scaleY = Mathf.Abs(_firstCreationSelectionPoint.transform.position.y - _selectionPoint.transform.position.y);
 
-                __middlePosition = (_firstCreationSelectionPoint.transform.position + _secondCreationSelectionPoint.transform.position) / 2;
-                __middlePosition.y = _firstCreationSelectionPoint.transform.position.y;
+                __scaleY = Mathf.Clamp(__scaleY, 0.001f, 10000);
+                __middlePosition = (_firstCreationSelectionPoint.transform.position + _selectionPoint.transform.position) / 2;
+
             }
 
             _objectCreationArea.transform.position = __middlePosition;
-            _objectCreationArea.transform.localScale = new Vector3(__scaleX, 0.01f, __scaleZ);
+            _objectCreationArea.transform.localScale = new Vector3(__scaleX, __scaleY, __scaleZ);
         }
 
         private void Start()

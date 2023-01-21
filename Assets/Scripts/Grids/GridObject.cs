@@ -12,7 +12,17 @@ namespace VipereSolide.Grids
             LateUpdate
         }
 
+        public enum GridType
+        {
+            Floor,
+            Ceil,
+            None
+        }
+
         [SerializeField] protected ExecuteMode _executeMode = ExecuteMode.LateUpdate;
+        [SerializeField] protected GridType _xGrid = GridType.Floor;
+        [SerializeField] protected GridType _yGrid = GridType.Ceil;
+        [SerializeField] protected GridType _zGrid = GridType.Floor;
 
         private void LateUpdate()
         {
@@ -37,11 +47,7 @@ namespace VipereSolide.Grids
                 return;
             }
 
-            Vector3 __truePosition = transform.localPosition;
-            __truePosition.x = Mathf.Floor(__truePosition.x / Grid.gridScale) * Grid.gridScale;
-            __truePosition.y = Mathf.Floor(__truePosition.y / Grid.gridScale) * Grid.gridScale;
-            __truePosition.z = Mathf.Floor(__truePosition.z / Grid.gridScale) * Grid.gridScale;
-
+            Vector3 __truePosition = transform.localPosition.GetGrid(_xGrid, _yGrid, _zGrid);
             transform.localPosition = __truePosition;
         }
     }

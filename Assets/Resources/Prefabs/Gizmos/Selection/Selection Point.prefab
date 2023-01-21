@@ -129,3 +129,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _executeMode: 0
+  _xGrid: 0
+  _yGrid: 2
+  _zGrid: 0
