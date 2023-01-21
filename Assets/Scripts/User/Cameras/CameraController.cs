@@ -26,11 +26,11 @@ namespace VipereSolide.User.Cameras
             _currentSpeed = (Input.GetKey(GameInputs.sprint) ? _movingSpeed * _shiftMovingSpeed : _movingSpeed);
         }
 
-        private void View()
+        private bool View()
         {
             if (!Input.GetKey(GameInputs.view))
             {
-                return;
+                return false;
             }
 
             float __x = Input.GetAxisRaw("Mouse X");
@@ -39,6 +39,8 @@ namespace VipereSolide.User.Cameras
 
             transform.localEulerAngles += new Vector3(0, __mouseView.x, 0);
             _cameraViewHandler.localEulerAngles += new Vector3(__mouseView.y, 0, 0);
+
+            return true;
         }
 
         private void Move()
@@ -51,8 +53,11 @@ namespace VipereSolide.User.Cameras
         private void Update()
         {
             GetCurrentSpeed();
-            View();
-            Move();
+            
+            if (View())
+            {
+                Move();
+            }
         }
     }
 }
