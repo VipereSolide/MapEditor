@@ -225,7 +225,7 @@ namespace RuntimeGizmos
 
             if (mainTargetRoot == null) return;
 
-            TransformSelected();
+            HandleTargetTransformActions();
         }
         private void LateUpdate()
         {
@@ -443,7 +443,10 @@ namespace RuntimeGizmos
 				}
             }
 		}
-		private void TransformSelected()
+		/// <summary>
+		/// Responsible for running the transform actions (such as translating or rotating) on the selected object if needed.
+		/// </summary>
+		private void HandleTargetTransformActions()
         {
             if (mainTargetRoot != null)
             {
