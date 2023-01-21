@@ -81,7 +81,7 @@ namespace RuntimeGizmos
 
         #endregion
         #region Getters/Setters
-		
+
         public Camera mainCamera
         {
             get;
@@ -282,33 +282,61 @@ namespace RuntimeGizmos
 
         #endregion
         #region Behaviour
+		
+		/// <summary>
+        /// Calculates the current state's color for a given tool or transform type, taking in account this tool's color settings.
+        /// </summary>
+        /// <param name="_type">The tool or transform type you want to get the color of.</param>
+        /// <param name="_normalColor">The default, unselected and unhovered color of that tool.</param>
+        /// <param name="_nearColor">The hovered color of that tool.</param>
+        /// <param name="_forceUseNormal">When passed true, the tool will never take the "_nearColor" (hovered color).</param>
+        /// <returns>A UnityEngine.Color struct containing color information for the current state of the given tool.</returns>
+        private Color GetColor(TransformType _type, Color _normalColor, Color _nearColor, bool _forceUseNormal = false)
+        {
+            return GetColor(_type, _normalColor, _nearColor, false, 1, _forceUseNormal);
+        }
+        /// <summary>
+        /// Calculates the current state's color for a given tool or transform type, taking in account this tool's color settings.
+        /// </summary>
+        /// <param name="_type">The tool or transform type you want to get the color of.</param>
+        /// <param name="_normalColor">The default, unselected and unhovered color of that tool.</param>
+        /// <param name="_nearColor">The hovered color of that tool.</param>
+        /// <param name="_alpha">The alpha of this tool, whatever if it's being hovered, selected or not.</param>
+        /// <param name="_forceUseNormal">When passed true, the tool will never take the "_nearColor" (hovered color).</param>
+        /// <returns>A UnityEngine.Color struct containing color information for the current state of the given tool.</returns>
+		private Color GetColor(TransformType _type, Color _normalColor, Color _nearColor, float _alpha, bool _forceUseNormal = false)
+        {
+            return GetColor(_type, _normalColor, _nearColor, true, _alpha, _forceUseNormal);
+        }
+        /// <summary>
+        /// Calculates the current state's color for a given tool or transform type, taking in account this tool's color settings.
+        /// </summary>
+        /// <param name="_type">The tool or transform type you want to get the color of.</param>
+        /// <param name="_normalColor">The default, unselected and unhovered color of that tool.</param>
+        /// <param name="_nearColor">The hovered color of that tool.</param>
+        /// <param name="_setAlpha">Whether you want to override the alpha, or always have it be opaque.</param>
+        /// <param name="_alpha">The alpha of this tool, whatever if it's being hovered, selected or not. Only applies in case you have "_setAlpha" enabled.</param>
+        /// <param name="_forceUseNormal">When passed true, the tool will never take the "_nearColor" (hovered color).</param>
+        /// <returns>A UnityEngine.Color struct containing color information for the current state of the given tool.</returns>
+		private Color GetColor(TransformType _type, Color _normalColor, Color _nearColor, bool _setAlpha, float _alpha, bool _forceUseNormal = false)
+        {
+            Color __color;
 
-        private Color GetColor(TransformType type, Color normalColor, Color nearColor, bool forceUseNormal = false)
-        {
-            return GetColor(type, normalColor, nearColor, false, 1, forceUseNormal);
-        }
-        private Color GetColor(TransformType type, Color normalColor, Color nearColor, float alpha, bool forceUseNormal = false)
-        {
-            return GetColor(type, normalColor, nearColor, true, alpha, forceUseNormal);
-        }
-        private Color GetColor(TransformType type, Color normalColor, Color nearColor, bool setAlpha, float alpha, bool forceUseNormal = false)
-        {
-            Color color;
-            if (!forceUseNormal && TranslatingTypeContains(type, false))
+            if (!_forceUseNormal && TranslatingTypeContains(_type, false))
             {
-                color = nearColor;
+                __color = _nearColor;
             }
             else
             {
-                color = normalColor;
+                __color = _normalColor;
             }
 
-            if (setAlpha)
+            if (_setAlpha)
             {
-                color.a = alpha;
+                __color.a = _alpha;
             }
 
-            return color;
+            return __color;
         }
 
         private void HandleUndoRedo()
@@ -1298,11 +1326,18 @@ namespace RuntimeGizmos
 
             GL.End();
         }
-        private void SetMaterial()
+        /// <summary>
+        /// Instantiates new line and outline materials if none are already existing.
+        /// </summary>
+		private void SetMaterial()
         {
             if (lineMaterial == null)
             {
                 lineMaterial = new Material(Shader.Find("Custom/Lines"));
+			}
+
+			if (outlineMaterial == null)
+			{
                 outlineMaterial = new Material(Shader.Find("Custom/Outline"));
             }
         }
