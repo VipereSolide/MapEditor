@@ -81,6 +81,7 @@ namespace RuntimeGizmos
 
         #endregion
         #region Getters/Setters
+		
         public Camera mainCamera
         {
             get;
@@ -1343,13 +1344,24 @@ namespace RuntimeGizmos
 
             return length;
         }
-        //This helps keep the size consistent no matter how far we are from it.
+        /// <summary>
+        /// Returns the a normalized size of the gizmos, no matter how far the camera is from the target object(s).
+        /// </summary>
+        /// <returns>A float representing the new normalized gizmos scale.</returns>
         public float GetDistanceMultiplier()
         {
-            if (mainTargetRoot == null) return 0f;
+            if (mainTargetRoot == null)
+            {
+                return 0f;
+            }
 
-            if (mainCamera.orthographic) return Mathf.Max(.01f, mainCamera.orthographicSize * 2f);
-            return Mathf.Max(.01f, Mathf.Abs(ExtVector3.MagnitudeInDirection(pivotPoint - transform.position, mainCamera.transform.forward)));
+            if (mainCamera.orthographic)
+            {
+                return Mathf.Max(0.01f, mainCamera.orthographicSize * 2f);
+            }
+
+            float __magnitudeInDirection = ExtVector3.MagnitudeInDirection(pivotPoint - transform.position, mainCamera.transform.forward);
+            return Mathf.Max(0.01f, Mathf.Abs(__magnitudeInDirection));
         }
         public void SetTranslatingAxis(TransformType type, Axis axis, Axis planeAxis = Axis.None)
         {
